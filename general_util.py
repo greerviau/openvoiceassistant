@@ -13,6 +13,7 @@ class GeneralController(object):
         self.hot = 85
         self.cold = 55
         self.LOCATION = location
+        self.OWM_API_KEY = os.environ['OWM_API_KEY']
 
     def search(self, command):
         subject = extract_subject(command)
@@ -49,7 +50,7 @@ class GeneralController(object):
             city = geocoder.ip('me').city
             location = f' in {city} '
         # Query weather api
-        weather_json = requests.get(f'http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OWM_API_KEY}&units=imperial').json()
+        weather_json = requests.get(f'http://api.openweathermap.org/data/2.5/weather?q={city}&appid={self.OWM_API_KEY}&units=imperial').json()
         # Parse results
         city = weather_json['name']
         temp = int(weather_json['main']['temp'])

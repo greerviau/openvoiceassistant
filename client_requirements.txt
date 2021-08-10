@@ -6,3 +6,7 @@ ibm-watson
 pyttsx3
 sounddevice
 SpeechRecognition
+nltk
+rake-nltk
+word
+word2number

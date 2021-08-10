@@ -13,7 +13,6 @@ import json
 import queue
 import requests
 from utils import clean_text
-from creds import IBM_API_KEY
 import scapy.all as scapy
 import socket
 
@@ -64,12 +63,14 @@ class VirtualAssistantClient(object):
         print(f'Device {devices[output[0]]} index {output[0]}')
         self.mic = sr.Microphone(device_index = output[0])
 
-        authenticator = IAMAuthenticator(IBM_API_KEY)
-        self.text_to_speech = TextToSpeechV1(
-            authenticator=authenticator
-        )
-        self.text_to_speech.set_service_url('https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/558fb7c3-30e9-4fe7-8861-46cd1031caf9')
+        if self.WATSON:
+            authenticator = IAMAuthenticator(os.environ['IBM_API_KEY'])
+            self.text_to_speech = TextToSpeechV1(
+                authenticator=authenticator
+            )
+            self.text_to_speech.set_service_url('https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/558fb7c3-30e9-4fe7-8861-46cd1031caf9')
 
+        else:
         self.tts = pyttsx3.init()
 
         self.say(f'How can I help {self.ADDRESS}?')
