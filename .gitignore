@@ -1,0 +1,11 @@
+__pycache__/
+dc_tts/
+.vector_cache/
+lj_data/
+Real-Time-Voice-Cloning/
+vosk/
+credentials.json
+token.json
+vocab.p
+pywhatkit_dbs.txt
+intent_model.h5

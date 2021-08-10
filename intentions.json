@@ -1,0 +1,228 @@
+{
+    "intentions": [
+        {
+            "tag":"greeting",
+            "patterns":[
+                "hello", 
+                "hello BIGNAMEBIG",
+                "hi",
+                "hey there", 
+                "howdy", 
+                "good morning", 
+                "good afternoon BIGNAMEBIG",
+                "good afternoon",
+                "good evening", 
+                "good to see you",
+                "whats up BIGNAMEBIG",
+                "whats up"
+            ]
+        },
+        {
+            "tag":"goodbye",
+            "patterns":[
+                "cya BIGNAMEBIG", 
+                "see ya", 
+                "see you later", 
+                "see ya later BIGNAMEBIG", 
+                "i am leaving", 
+                "have a good day", 
+                "bye",
+                "bye BIGNAMEBIG", 
+                "im going out",
+                "im heading out BIGNAMEBIG",
+                "ill see ya later",
+                "im gonna go",
+                "im going to go",
+                "im going to head out"
+            ]
+        },
+        {
+            "tag":"chat",
+            "patterns":[
+                "whats your name",
+                "you got a name",
+                "do you have a name",
+                "what is your name",
+                "what can i call you",
+                "what what should i call you",
+                "what do you like to do",
+                "what are your hobbies",
+                "what do you do for fun",
+                "what is your favorite",
+                "how do you work",
+                "how are you BIGNAMEBIG",
+                "what do you think i should do",
+                "do you have any ideas",
+                "can you help me figure this out",
+                "thank you",
+                "thanks for the help",
+                "thanks pal",
+                "thanks buddy",
+                "youre the best",
+                "what do you say about that",
+                "what is your best idea",
+                "what kinda thinks do you like to do",
+                "thanks",
+                "thanks man",
+                "thanks BIGNAMEBIG",
+                "whats your story",
+                "what was the highlight of your week",
+                "youre really fun to talk to",
+                "your need to work on your social skills",
+                "i think we could be really great friends",
+                "whats your primary goal"
+            ]
+        },
+        {
+            "tag":"schedule",
+            "patterns":[
+                "whats my schedule tomorrow", 
+                "what do i have on", 
+                "what do i have planned", 
+                "what do i have scheduled", 
+                "do i have to do anything on", 
+                "do i have anything planned", 
+                "do i have any events", 
+                "do i have plans", 
+                "am i busy today",
+                "do i have anything going on today",
+                "whats the deal for today",
+                "whats the plan for tomorrow",
+                "what are my plans",
+                "what are my plans for BIGBLANKBIG",
+                "how many plans do i have",
+                "can you check my schedule for today",
+                "can you check my schedule for tomorrow",
+                "whats on the schedule for tomorrow",
+                "what do i have in my calendar for",
+                "whats in the books for next tuesday",
+                "whats the rest of the week looking like"
+            ]
+        },
+        {
+            "tag":"weather",
+            "patterns":[
+                "whats the weather", 
+                "me the weather", 
+                "have the weather", 
+                "hows the weather", 
+                "how is the weather", 
+                "is it sunny outside", 
+                "is it cold outside", 
+                "is it hot today",
+                "hows it look outside",
+                "whats it looking like outside",
+                "can i get the weather",
+                "can you get me the weather",
+                "whats the temperature outside",
+                "whats the temp",
+                "what is the temperature",
+                "what do the skies look like",
+                "what is the sky looking like",
+                "whats the temp and what do the skies look like"
+            ]
+        },
+        {
+            "tag":"play",
+            "patterns":[
+                "can you play", 
+                "can you play me", 
+                "can you pull up", 
+                "can you put on", 
+                "play me some", 
+                "put on some", 
+                "play me a song",
+                "play me some music",
+                "put on some music",
+                "play some music",
+                "put on a video by"
+            ]
+        },
+        {
+            "tag":"time",
+            "patterns":[
+                "do you have the time", 
+                "whats the time", 
+                "can i have the time", 
+                "can i get the time", 
+                "what time is it", 
+                "me the time", 
+                "what is the time", 
+                "you got the time",
+                "can you give me the time",
+                "do you got the time",
+                "do you got the time",
+                "can you get me the time",
+                "can you tell me the time",
+                "do you know what time it is"
+            ]
+        },
+        {
+            "tag":"lookup",
+            "patterns":[
+                "search", 
+                "look up", 
+                "who is", 
+                "who are", 
+                "what is a BIGBLANKBIG", 
+                "what are", 
+                "find me", 
+                "figure out who", 
+                "figure out what",
+                "can you lookup",
+                "can you find me",
+                "do you know who BIGBLANKBIG is",
+                "do you know what BIGBLANKBIG is",
+                "can you figure out what BIGBLANKBIG was",
+                "can you look up what BIGBLANKBIG is",
+                "do you know what BIGBLANKBIG is",
+                "do you know who BIGBLANKBIG was",
+                "do you know how BIGBLANKBIG was made",
+                "what was BIGBLANKBIG",
+                "who was BIGBLANKBIG",
+                "can you find out who BIGBLANKBIG is"
+            ]
+        },
+        {
+            "tag":"math",
+            "patterns":[
+                "what is the squareroot of BIGBLANKBIG", 
+                "multiply BIGBLANKBIG by BIGBLANKBIG", 
+                "what is BIGBLANKBIG plus BIGBLANKBIG", 
+                "subtract BIGBLANKBIG from BIGBLANKBIG", 
+                "raise BIGBLANKBIG to the power of BIGBLANKBIG", 
+                "divide BIGBLANKBIG by BIGBLANKBIG", 
+                "calculate the prime factors of BIGBLANKBIG", 
+                "what is the product of BIGBLANKBIG and BIGBLANKBIG", 
+                "what is the mean of BIGBLANKBIG", 
+                "what is the average number of BIGBLANKBIG"
+            ]
+        },
+        {
+            "tag":"reminder",
+            "patterns":[
+                "can you set an alarm for",
+                "remind me later to BIGBLANKBIG",
+                "set and alarm for",
+                "wake me up at",
+                "remind me at BIGBLANKBIG to BIGBLANKBIG",
+                "set a reminder for BIGBLANKBIG to BIGBLANKBIG",
+                "dont forget to wake me up at BIGBLANKBIG",
+                "dont forget to remind me",
+                "let me know at BIGBLANKBIG that i need to BIGBLANKBIG",
+                "can you remind me to BIGBLANKBIG at BIGBLANKBIG",
+                "can you wake me up at BIGBLANKBIG",
+                "please remind me to BIGBLANKBIG at BIGBLANKBIG",
+                "can you remind me on BIGBLANKBIG that i have BIGBLANKBIG",
+                "can you set a reminder for me on BIGBLANKBIG",
+                "do me a favor and remind me that i have BIGBLANKBIG",
+                "can you put in my schedule that i need to",
+                "can you mark down in my schedule that",
+                "can you mark that down in my calendar",
+                "can you pencil me in for BIGBLANKBIG on BIGBLANKBIG at",
+                "can you pencil me in on BIGBLANKBIG for"
+            ]
+        }
+        
+    ]
+}
