@@ -71,7 +71,7 @@ class VirtualAssistantClient(object):
             self.text_to_speech.set_service_url('https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/558fb7c3-30e9-4fe7-8861-46cd1031caf9')
 
         else:
-        self.tts = pyttsx3.init()
+            self.tts = pyttsx3.init()
 
         self.say(f'How can I help {self.ADDRESS}?')
 
