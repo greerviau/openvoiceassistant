@@ -59,7 +59,8 @@ class VirtualAssistantClient(object):
 
         self.recog = sr.Recognizer()
         devices = sr.Microphone.list_microphone_names()
-        output = [idx for idx, element in enumerate(devices) if 'snowball' in element.lower() and 'microphone' in element.lower()]
+        print(devices)
+        output = [idx for idx, element in enumerate(devices) if 'snowball' in element.lower() or 'microphone' in element.lower()]
         self.device = output[0]
         print(f'Device {devices[self.device]} index {self.device}')
         self.mic = sr.Microphone(device_index = self.device)
