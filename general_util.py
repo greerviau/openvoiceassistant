@@ -4,6 +4,7 @@ import wikipedia
 import json
 import requests
 import geocoder
+import os
 from utils import extract_subject
 
 class GeneralController(object):

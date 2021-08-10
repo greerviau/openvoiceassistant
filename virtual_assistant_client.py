@@ -21,7 +21,7 @@ class VirtualAssistantClient(object):
     def __init__(self):
         port = 8000
         devices = self.scan('10.0.0.1/24')
-
+        print(devices)
         print('Looking for VA HUB...')
         for device in devices:
             ip = device['ip']
