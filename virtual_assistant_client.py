@@ -57,15 +57,15 @@ class VirtualAssistantClient(object):
         self.vosk_model = vosk.Model('vosk')
         self.vosk_que = queue.Queue()
 
-        self.device = 2
-        device_info = sd.query_devices(self.device, 'input')
-        self.samplerate = int(device_info['default_samplerate'])
-
         self.recog = sr.Recognizer()
         devices = sr.Microphone.list_microphone_names()
         output = [idx for idx, element in enumerate(devices) if 'snowball' in element.lower() and 'microphone' in element.lower()]
-        print(f'Device {devices[output[0]]} index {output[0]}')
-        self.mic = sr.Microphone(device_index = output[0])
+        self.device = output[0]
+        print(f'Device {devices[self.device]} index {self.device}')
+        self.mic = sr.Microphone(device_index = self.device)
+
+        device_info = sd.query_devices(self.device, 'input')
+        self.samplerate = int(device_info['default_samplerate'])
 
         if self.WATSON:
             authenticator = IAMAuthenticator(os.environ['IBM_API_KEY'])
