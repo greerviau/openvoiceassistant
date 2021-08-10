@@ -19,7 +19,7 @@ import argparse
 
 class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip = None):
+    def __init__(self, hub_ip = None, google=False, watson=False):
         port = 8000
         if not hub_ip:
             devices = self.scan('10.0.0.1/24')
@@ -45,8 +45,8 @@ class VirtualAssistantClient(object):
 
         self.USEVOICE = True
         self.SYNTHVOICE = True
-        self.WATSON = False
-        self.GOOGLE = False
+        self.WATSON = watson
+        self.GOOGLE = google
 
         self.ENGAGED = True
         self.TIMEOUT = 15.0
@@ -203,8 +203,10 @@ class VirtualAssistantClient(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--hub', type=str, help='VA hub ip address')
+    parser.add_argument('--hub', type=str, help='VA hub ip address', default='')
+    parser.add_argument('--google', type=bool, help='Use google speech recognition', default=False)
+    parser.add_argument('--watson', type=bool, help='Use watson speech synthesis', default=False)
 
     args = parser.parse_args()
-    assistant = VirtualAssistantClient(hub_ip=args.hub)
+    assistant = VirtualAssistantClient(hub_ip=args.hub, google=args.google, watson=args.watson)
     assistant.run()    
