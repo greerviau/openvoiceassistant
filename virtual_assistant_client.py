@@ -15,23 +15,27 @@ import requests
 from utils import clean_text
 import scapy.all as scapy
 import socket
+import argparse
 
 class VirtualAssistantClient(object):
     
-    def __init__(self):
+    def __init__(self, hub_ip = None):
         port = 8000
-        devices = self.scan('10.0.0.1/24')
-        print(devices)
-        print('Looking for VA HUB...')
-        for device in devices:
-            ip = device['ip']
-            print(f'\rTesting: {ip}', end='')
-            try:
-                response = requests.get(f'http://{ip}:{port}/is_va_hub')
-                host = ip
-                break
-            except:
-                pass
+        if not hub_ip:
+            devices = self.scan('10.0.0.1/24')
+            print(devices)
+            print('Looking for VA HUB...')
+            for device in devices:
+                ip = device['ip']
+                print(f'\rTesting: {ip}', end='')
+                try:
+                    response = requests.get(f'http://{ip}:{port}/is_va_hub')
+                    host = ip
+                    break
+                except:
+                    pass
+        else:
+            host = hub_ip
 
         print(f'\nFound VA HUB | ip: {host}')
         self.api_url = f'http://{host}:{port}'
@@ -197,5 +201,9 @@ class VirtualAssistantClient(object):
                         self.shutdown()
 
 if __name__ == '__main__':
-    assistant = VirtualAssistantClient()
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--hub', type=str, help='VA hub ip address')
+
+    args = parser.parse_args()
+    assistant = VirtualAssistantClient(hub_ip=args.hub)
     assistant.run()    
