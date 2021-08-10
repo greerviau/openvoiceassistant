@@ -1,0 +1,8 @@
+scapy
+vosk
+pydub
+ibm_cloud_sdk_core
+ibm-watson
+pyttsx3
+sounddevice
+SpeechRecognition

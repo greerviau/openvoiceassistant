@@ -14,14 +14,12 @@ import queue
 import requests
 from utils import clean_text
 from creds import IBM_API_KEY
-from virtual_assistant import VirtualAssistant
 import scapy.all as scapy
 import socket
 
 class VirtualAssistantClient(object):
     
     def __init__(self):
-        #self.VA = VirtualAssistant()
         port = 8000
         devices = self.scan('10.0.0.1/24')
 
