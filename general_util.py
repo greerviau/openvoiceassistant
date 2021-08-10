@@ -5,7 +5,6 @@ import json
 import requests
 import geocoder
 from utils import extract_subject
-from creds import OWM_API_KEY
 
 class GeneralController(object):
     def __init__(self, address, location):
