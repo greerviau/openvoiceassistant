@@ -2,9 +2,9 @@ from utils import encode_word_vec, pad_sequence
 import numpy as np
 from keras.models import load_model
 import pickle
-from chat_util import ChatController
-from planning_util import PlanningController
-from general_util import GeneralController
+from controllers.chat_controller import ChatController
+from controllers.planning_controller import PlanningController
+from controllers.general_controller import GeneralController
 
 class VirtualAssistant(object):
     def __init__(self):
@@ -105,5 +105,5 @@ class VirtualAssistant(object):
         return self.ADDRESS
 
     def reset_chat(self):
-        ChatController.reset_chat()
+        self.chatControl.reset_chat()
             

@@ -5,7 +5,7 @@ import json
 import requests
 import geocoder
 import os
-from utils import extract_subject
+from nlp_utils import extract_subject
 
 class GeneralController(object):
     def __init__(self, address, location):

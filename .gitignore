@@ -9,3 +9,4 @@ token.json
 vocab.p
 pywhatkit_dbs.txt
 intent_model.h5
+response.wav

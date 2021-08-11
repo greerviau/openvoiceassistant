@@ -203,7 +203,7 @@ class VirtualAssistantClient(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--hub', type=str, help='VA hub ip address', default='')
+    parser.add_argument('--hub', type=str, help='VA hub ip address', default=None)
     parser.add_argument('--google', type=bool, help='Use google speech recognition', default=False)
     parser.add_argument('--watson', type=bool, help='Use watson speech synthesis', default=False)
 

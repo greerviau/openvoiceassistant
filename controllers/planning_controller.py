@@ -1,6 +1,6 @@
 import datetime
-from google_util import GoogleController
-from utils import parse_date, parse_time, extract_keywords, DAYS
+from controllers.google_controller import GoogleController
+from nlp_utils import parse_date, parse_time, extract_keywords, DAYS
 
 class PlanningController(object):
     def __init__(self, address):
