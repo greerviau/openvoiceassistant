@@ -133,7 +133,7 @@ class VirtualAssistantClient(object):
             if self.USEVOICE:
                 if not self.GOOGLE:
                     print('Listening...')
-                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = 2000, device=self.device, dtype='int16',
+                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = 0, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
                         rec = vosk.KaldiRecognizer(self.vosk_model, self.samplerate)
