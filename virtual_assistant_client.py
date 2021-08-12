@@ -19,7 +19,7 @@ import argparse
 
 class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip = None, google=False, watson=False):
+    def __init__(self, hub_ip = None, google=False, watson=False, mic_tag=''):
         port = 8000
         if not hub_ip:
             devices = self.scan('10.0.0.1/24')
@@ -60,7 +60,9 @@ class VirtualAssistantClient(object):
         self.recog = sr.Recognizer()
         devices = sr.Microphone.list_microphone_names()
         print(devices)
-        output = [idx for idx, element in enumerate(devices) if 'snowball' in element.lower() or 'microphone' in element.lower()]
+        if not mic_tag:
+            mic_tag='microphone'
+        output = [idx for idx, element in enumerate(devices) if mic_tag in element.lower()]
         self.device = output[0]
         print(f'Device {devices[self.device]} index {self.device}')
         self.mic = sr.Microphone(device_index = self.device)
@@ -131,7 +133,7 @@ class VirtualAssistantClient(object):
             if self.USEVOICE:
                 if not self.GOOGLE:
                     print('Listening...')
-                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = 8000, device=self.device, dtype='int16',
+                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = 2000, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
                         rec = vosk.KaldiRecognizer(self.vosk_model, self.samplerate)
@@ -206,7 +208,8 @@ if __name__ == '__main__':
     parser.add_argument('--hub', type=str, help='VA hub ip address', default=None)
     parser.add_argument('--google', type=bool, help='Use google speech recognition', default=False)
     parser.add_argument('--watson', type=bool, help='Use watson speech synthesis', default=False)
+    parser.add_argument('--mic', type=str, help='Microphone tag', default='')
 
     args = parser.parse_args()
-    assistant = VirtualAssistantClient(hub_ip=args.hub, google=args.google, watson=args.watson)
+    assistant = VirtualAssistantClient(hub_ip=args.hub, google=args.google, watson=args.watson, mic_tag=args.mic)
     assistant.run()    
