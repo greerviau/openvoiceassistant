@@ -19,15 +19,27 @@ import argparse
 
 class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip = None, google=False, watson=False, mic_tag=''):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, debug):
+        self.USEVOICE = use_voice
+        self.SYNTHVOICE = synth_voice
+        self.WATSON = watson
+        self.GOOGLE = google
+        self.DEBUG = debug
+
+        self.log(f'Debug Mode: {self.DEBUG}')
+        self.log(f'Use Voice Input: {self.USEVOICE}')
+        self.log(f'Using GOOGLE: {self.GOOGLE}')
+        self.log(f'Synth Voice Output: {self.USEVOICE}')
+        self.log(f'Using WATSON: {self.WATSON}')
+
         port = 8000
         if not hub_ip:
             devices = self.scan('10.0.0.1/24')
-            print(devices)
-            print('Looking for VA HUB...')
+            self.log(devices)
+            self.log('Looking for VA HUB...')
             for device in devices:
                 ip = device['ip']
-                print(f'\rTesting: {ip}', end='')
+                self.log(f'\rTesting: {ip}', end='')
                 try:
                     response = requests.get(f'http://{ip}:{port}/is_va_hub')
                     host = ip
@@ -37,34 +49,24 @@ class VirtualAssistantClient(object):
         else:
             host = hub_ip
 
-        print(f'\nFound VA HUB | ip: {host}')
+        self.log(f'\nFound VA HUB | ip: {host}')
+
         self.api_url = f'http://{host}:{port}'
         name_and_address = requests.get(f'{self.api_url}/get_name_and_address').json()
         self.NAME = name_and_address['name']
         self.ADDRESS = name_and_address['address']
-
-        self.USEVOICE = True
-        self.SYNTHVOICE = True
-        self.WATSON = watson
-        self.GOOGLE = google
-
-        self.ENGAGED = True
-        self.TIMEOUT = 15.0
-        self.TIMER = Timer(interval=30.0, function=self.disengage)
-        if self.USEVOICE:
-            self.TIMER.start()
 
         self.vosk_model = vosk.Model('vosk')
         self.vosk_que = queue.Queue()
 
         self.recog = sr.Recognizer()
         devices = sr.Microphone.list_microphone_names()
-        print(devices)
+        self.log(devices)
         if not mic_tag:
             mic_tag='microphone'
         output = [idx for idx, element in enumerate(devices) if mic_tag in element.lower()]
         self.device = output[0]
-        print(f'Device {devices[self.device]} index {self.device}')
+        self.log(f'Device {devices[self.device]} index {self.device}')
         self.mic = sr.Microphone(device_index = self.device)
 
         device_info = sd.query_devices(self.device, 'input')
@@ -79,9 +81,22 @@ class VirtualAssistantClient(object):
 
         else:
             self.tts = pyttsx3.init()
+            self.tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enGB_GeorgeM')
+            self.tts.setProperty('rate',175)
+    
+        self.ENGAGED = True
+        self.TIMEOUT = 15.0
+        self.TIMER = Timer(interval=30.0, function=self.disengage)
+        if self.USEVOICE:
+            self.TIMER.start()
 
         self.say(f'How can I help {self.ADDRESS}?')
 
+    def log(self, log_text, end='\n'):
+        if self.DEBUG:
+            print(log_text, end=end)
+
+    
     def scan(self, ip):
         arp_req_frame = scapy.ARP(pdst = ip)
 
@@ -164,7 +179,7 @@ class VirtualAssistantClient(object):
             else:
                 return input('You: ')
         except Exception as ex:
-            print(ex)
+            self.log(ex)
             self.shutdown()
 
     
@@ -189,7 +204,7 @@ class VirtualAssistantClient(object):
             text = self.listen()
             if text:
                 text = clean_text(text)
-                print('cleaned: ',text)
+                self.log(f'cleaned: {text}')
                 if self.NAME in text or self.ENGAGED:
                     self.stop_waiting()
                     understanding = requests.get(f'{self.api_url}/understand/{text}').json()
@@ -205,11 +220,14 @@ class VirtualAssistantClient(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--hub', type=str, help='VA hub ip address', default=None)
-    parser.add_argument('--google', type=bool, help='Use google speech recognition', default=False)
-    parser.add_argument('--watson', type=bool, help='Use watson speech synthesis', default=False)
+    parser.add_argument('--hub', type=str, help='VA hub ip address', default='')
+    parser.add_argument('--useVoice', help='Use voice as input', action='store_true')
+    parser.add_argument('--synthVoice', help='Synthesize voice as output', action='store_true')
+    parser.add_argument('--google', help='Use google speech recognition', action='store_true')
+    parser.add_argument('--watson', help='Use watson speech synthesis', action='store_true')
     parser.add_argument('--mic', type=str, help='Microphone tag', default='')
+    parser.add_argument('--debug', help='Synthesize voice as output', action='store_true')
 
     args = parser.parse_args()
-    assistant = VirtualAssistantClient(hub_ip=args.hub, google=args.google, watson=args.watson, mic_tag=args.mic)
+    assistant = VirtualAssistantClient(*vars(args).values())
     assistant.run()    
