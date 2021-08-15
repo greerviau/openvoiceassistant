@@ -156,7 +156,7 @@ class VirtualAssistantClient(object):
                     with sd.RawInputStream(samplerate=self.SAMPLERATE, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
-                        rec = vosk.KaldiRecognizer(self.vosk_model, self.samplerate)
+                        rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE)
                         while True:
                             data = self.vosk_que.get()
                             if rec.AcceptWaveform(data):
