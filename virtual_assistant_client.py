@@ -72,7 +72,7 @@ class VirtualAssistantClient(object):
         self.mic = sr.Microphone(device_index = self.device)
 
         device_info = sd.query_devices(self.device, 'input')
-        if self.SASAMPLERATE is None:
+        if self.SAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
 
         self.log(self.SAMPLERATE)
