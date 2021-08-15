@@ -75,6 +75,8 @@ class VirtualAssistantClient(object):
         if self.SASAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
 
+        self.log(self.SAMPLERATE)
+
         if self.WATSON:
             authenticator = IAMAuthenticator(os.environ['IBM_API_KEY'])
             self.text_to_speech = TextToSpeechV1(
