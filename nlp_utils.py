@@ -1,9 +1,11 @@
 import datetime
 from rake_nltk import Rake
 from word2number import w2n
+from nltk.corpus import stopwords
 
 rake = Rake()
 
+STOPWORDS = set(stopwords.words('english'))
 MONTHS = ['january', 'february', 'march', 'april', 'may', 'june','july', 'august', 'september','october', 'november', 'december']
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 DAY_OF_MONTH = {
@@ -175,13 +177,16 @@ def parse_date(text):
 def extract_subject(text):
     kw = rake.extract_keywords_from_text(text)
     ranked_phrases = rake.get_ranked_phrases()
+    filter(lambda w: not w in STOPWORDS, ranked_phrases)
     if len(ranked_phrases) > 0:
         return ranked_phrases[0]
     return None
 
 def extract_keywords(text):
     kw = rake.extract_keywords_from_text(text)
-    return rake.get_ranked_phrases()
+    ranked_phrases = rake.get_ranked_phrases()
+    filter(lambda w: not w in STOPWORDS, ranked_phrases)
+    return ranked_phrases
 
 if __name__ == '__main__':
     print(clean_text('Testi\'ng the po,wer of. cleani\'ng t!his #text'))

@@ -19,11 +19,12 @@ import argparse
 
 class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, debug):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, blocksize, debug):
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.WATSON = watson
         self.GOOGLE = google
+        self.BLOCKSIZE = blocksize
         self.DEBUG = debug
 
         self.log(f'Debug Mode: {self.DEBUG}')
@@ -41,7 +42,7 @@ class VirtualAssistantClient(object):
                 ip = device['ip']
                 self.log(f'\rTesting: {ip}', end='')
                 try:
-                    response = requests.get(f'http://{ip}:{port}/is_va_hub')
+                    response = requests.get(f'http://{ip}:{port}/is_va_hub').json()
                     host = ip
                     break
                 except:
@@ -148,7 +149,7 @@ class VirtualAssistantClient(object):
             if self.USEVOICE:
                 if not self.GOOGLE:
                     print('Listening...')
-                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = 500, device=self.device, dtype='int16',
+                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
                         rec = vosk.KaldiRecognizer(self.vosk_model, self.samplerate)
@@ -226,6 +227,7 @@ if __name__ == '__main__':
     parser.add_argument('--google', help='Use google speech recognition', action='store_true')
     parser.add_argument('--watson', help='Use watson speech synthesis', action='store_true')
     parser.add_argument('--mic', type=str, help='Microphone tag', default='')
+    parser.add_argument('--blocksize', type=int, help='Blocksize for voice capture', default=8000)
     parser.add_argument('--debug', help='Synthesize voice as output', action='store_true')
 
     args = parser.parse_args()

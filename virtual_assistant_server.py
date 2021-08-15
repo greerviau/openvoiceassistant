@@ -10,7 +10,7 @@ VA = VirtualAssistant()
 host = '0.0.0.0'
 port = 8000
 
-@app.route('/is_va_hub', methods=['GET'])
+@app.route('/is_va_hub')
 def is_va_hub():
     return {
         'ip':host,
