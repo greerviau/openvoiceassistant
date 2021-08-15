@@ -19,12 +19,13 @@ import argparse
 
 class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, blocksize, debug):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, blocksize, samplerate, debug):
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.WATSON = watson
         self.GOOGLE = google
         self.BLOCKSIZE = blocksize
+        self.SAMPLERATE = samplerate
         self.DEBUG = debug
 
         self.log(f'Debug Mode: {self.DEBUG}')
@@ -71,7 +72,8 @@ class VirtualAssistantClient(object):
         self.mic = sr.Microphone(device_index = self.device)
 
         device_info = sd.query_devices(self.device, 'input')
-        self.samplerate = int(device_info['default_samplerate'])
+        if self.SASAMPLERATE is None:
+            self.SAMPLERATE = int(device_info['default_samplerate'])
 
         if self.WATSON:
             authenticator = IAMAuthenticator(os.environ['IBM_API_KEY'])
@@ -149,7 +151,7 @@ class VirtualAssistantClient(object):
             if self.USEVOICE:
                 if not self.GOOGLE:
                     print('Listening...')
-                    with sd.RawInputStream(samplerate=self.samplerate, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
+                    with sd.RawInputStream(samplerate=self.SAMPLERATE, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
                         rec = vosk.KaldiRecognizer(self.vosk_model, self.samplerate)
@@ -228,6 +230,7 @@ if __name__ == '__main__':
     parser.add_argument('--watson', help='Use watson speech synthesis', action='store_true')
     parser.add_argument('--mic', type=str, help='Microphone tag', default='')
     parser.add_argument('--blocksize', type=int, help='Blocksize for voice capture', default=8000)
+    parser.add_argument('--samplerate', type=int, help='Samplerate for microphone', default=None)
     parser.add_argument('--debug', help='Synthesize voice as output', action='store_true')
 
     args = parser.parse_args()
