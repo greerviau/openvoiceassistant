@@ -2,11 +2,10 @@ scapy
 vosk
 pydub
 ibm_cloud_sdk_core
-ibm-watson
+ibm_watson
 pyttsx3
 sounddevice
 SpeechRecognition
 nltk
 rake-nltk
-word
 word2number
