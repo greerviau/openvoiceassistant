@@ -132,21 +132,21 @@ class VirtualAssistantClient(object):
     def say(self, text):
         print(f'{self.NAME}: {text}')
         if self.SYNTHVOICE:
-            if self.WATSON:
-                with open('./response.wav', 'wb') as audio_file:
+            with open('./response.wav', 'wb') as audio_file:
+                if self.WATSON:
                     audio_file.write(
                         self.text_to_speech.synthesize(
                             text,
                             voice='en-GB_JamesV3Voice',
                             accept='audio/wav'        
                         ).get_result().content)
+                else:
+                    audio_file.write(
+                        requests.get(f'{self.api_url}/synth_voice/{text}').content
+                    )
 
-                audio = AudioSegment.from_wav('response.wav')
-                play(audio)
-            else:
-                self.tts.say(text)
-                self.tts.runAndWait()
-
+            audio = AudioSegment.from_wav('response.wav')
+            play(audio)
     
     def listen(self):
         try:

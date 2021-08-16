@@ -1,7 +1,10 @@
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from fastapi.responses import StreamingResponse
 import uvicorn
+import pyttsx3
 from virtual_assistant import VirtualAssistant
+import wave
 
 app = FastAPI()
 
@@ -9,6 +12,9 @@ VA = VirtualAssistant()
 
 host = '0.0.0.0'
 port = 8000
+tts = pyttsx3.init()
+tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enGB_GeorgeM')
+tts.setProperty('rate',175)
 
 @app.route('/is_va_hub')
 def is_va_hub():
@@ -33,6 +39,15 @@ def understand(text: str):
         'intent':intent,
         'conf':conf
     }
+
+@app.get('/synth_voice/{text}')
+def synth_voice(text: str):
+    tts.save_to_file(text, 'synth_response.wav')
+    tts.runAndWait()
+    with open('synth_response.wav', 'rb') as fd:
+        contents = fd.read()
+        return Response(content = contents)
+        
 
 @app.get('/get_name_and_address')
 def get_name_and_address():
