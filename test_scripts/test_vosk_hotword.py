@@ -59,10 +59,7 @@ try:
 
     model = vosk.Model(args.model)
 
-    if args.filename:
-        dump_fn = open(args.filename, "wb")
-    else:
-        dump_fn = None
+    dump_fn = None
 
     with sd.RawInputStream(samplerate=args.samplerate, blocksize = 8000, device=args.device, dtype='int16',
                             channels=1, callback=callback):
@@ -74,11 +71,14 @@ try:
             while True:
                 data = q.get()
                 if rec.AcceptWaveform(data):
-                    print(rec.Result())
+                    dump_fn.close()
+                    dump_fn = None
                 else:
                     print(rec.PartialResult())
-                if dump_fn is not None:
-                    dump_fn.write(data)
+                    if text:
+                        if dump_fn is None:
+                            dump_fn = open('command.wav', "wb")
+                        dump_fn.write(data)
 
 except KeyboardInterrupt:
     print('\nDone')
