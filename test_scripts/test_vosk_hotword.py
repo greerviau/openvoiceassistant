@@ -72,8 +72,9 @@ try:
             while True:
                 data = q.get()
                 if rec.AcceptWaveform(data):
-                    dump_fn.close()
-                    dump_fn = None
+                    if dump_fn is not None
+                        dump_fn.close()
+                        dump_fn = None
                 else:
                     text = json.loads(rec.PartialResult())['partial']
                     if text:
