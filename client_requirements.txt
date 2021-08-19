@@ -9,3 +9,5 @@ SpeechRecognition
 nltk
 rake-nltk
 word2number
+numpy
+pyaudio

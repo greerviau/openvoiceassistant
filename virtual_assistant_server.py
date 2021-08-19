@@ -8,7 +8,7 @@ import wave
 
 app = FastAPI()
 
-VA = VirtualAssistant()
+VA = VirtualAssistant(name='jasper', address='sir', debug=False)
 
 host = '0.0.0.0'
 port = 8000
@@ -16,7 +16,7 @@ tts = pyttsx3.init()
 tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enGB_GeorgeM')
 tts.setProperty('rate',175)
 
-@app.route('/is_va_hub')
+@app.get('/is_va_hub')
 def is_va_hub():
     return {
         'ip':host,

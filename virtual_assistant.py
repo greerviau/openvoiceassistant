@@ -7,19 +7,24 @@ from controllers.planning_controller import PlanningController
 from controllers.general_controller import GeneralController
 
 class VirtualAssistant(object):
-    def __init__(self):
-        self.NAME = 'david'
-        self.ADDRESS = 'sir'
+    def __init__(self, name, address, debug=False):
+        self.NAME = name
+        self.ADDRESS = address
+        self.DEBUG = debug
 
         self.intent_model = load_model('intent_model.h5')
         self.word_to_int, self.int_to_label, self.seq_length = pickle.load(open('vocab.p', 'rb'))
         self.CONF_THRESH = 85
 
-        self.chatControl = ChatController()
-        self.planningControl = PlanningController(self.ADDRESS)
-        self.generalControl = GeneralController(self.ADDRESS, 'gloucester')        
+        self.chatControl = ChatController(debug=debug)
+        self.planningControl = PlanningController(self.ADDRESS, debug=debug)
+        self.generalControl = GeneralController(self.ADDRESS, 'gloucester', debug=debug)        
 
         intent, conf = self.predict_intent('bigblankbig')
+
+    def log(self, text, end='\n'):
+        if self.DEBUG:
+            print(text, end=end)
 
     def understand(self, command):
 
@@ -37,7 +42,7 @@ class VirtualAssistant(object):
                 response = ''
                 intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
                 
-                print(f'intent: {intent} | conf: {conf}')
+                self.log(f'intent: {intent} | conf: {conf}')
 
                 if conf > self.CONF_THRESH:
                     if intent == 'greeting':
@@ -77,7 +82,6 @@ class VirtualAssistant(object):
 
             else:
                 return (None, '', 0.0)
-            
 
     def greeting(self, command):
         if 'morning' in command:
@@ -105,5 +109,6 @@ class VirtualAssistant(object):
         return self.ADDRESS
 
     def reset_chat(self):
+        self.log('Chat reset')
         self.chatControl.reset_chat()
             

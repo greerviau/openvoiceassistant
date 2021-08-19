@@ -3,10 +3,15 @@ from controllers.google_controller import GoogleController
 from nlp_utils import parse_date, parse_time, extract_keywords, DAYS
 
 class PlanningController(object):
-    def __init__(self, address):
+    def __init__(self, address, debug=False):
+        self.DEBUG = debug
         self.ADDRESS = address
         self.googleControl = GoogleController()
         self.googleControl.authenticate_google_calendar()
+
+    def log(self, text, end='\n'):
+        if self.DEBUG:
+            print(text, end=end)
 
     def check_calendar(self, text):
         date, date_str = parse_date(text)
@@ -55,7 +60,7 @@ class PlanningController(object):
         date_string = ''
         times = []
         keywords = extract_keywords(text)
-        print(keywords)
+        self.log(keywords)
         for keyword in list(keywords):
             ext_date, date_str = parse_date(keyword)
             if ext_date:
@@ -70,10 +75,10 @@ class PlanningController(object):
                 times.append(time_packet)
                 keywords.remove(keyword)
         
-        print(date, date_string, times)
-        print(keywords)
+        self.log(f'{date} {date_string} {times}')
+        self.log(f'{keywords}')
         subject = keywords[0]
-        print(subject)
+        self.log(f'{subject}')
 
         r_type = ''
         subject_string = ' '

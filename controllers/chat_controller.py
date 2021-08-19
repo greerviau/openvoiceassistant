@@ -4,8 +4,10 @@ import torch
 
 class ChatController(object):
     def __init__(self,
-                open_ai_token = None
+                open_ai_token = None,
+                debug=False
                 ):
+        self.DEBUG=debug
         self.OPENAI = True if open_ai_token else False
         openai.api_key = open_ai_token
         self.init_prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: Hello, who are you?\nAI: I am an AI created by OpenAI. How can I help you today?\n"
@@ -17,6 +19,10 @@ class ChatController(object):
         self.chat_history_ids = None
         self.last_chat_response = None
         self.step = 0
+
+    def log(self, text, end='\n'):
+        if self.DEBUG:
+            print(text, end=end)
 
     def chat(self, text):
         final_response = ''
@@ -42,7 +48,6 @@ class ChatController(object):
             text_response = text_response.split('Human:')[0]
             self.prompt += f'{text_response}\n'
             if len(self.prompt) > 1600:
-                print('Trimming prompt')
                 self.prompt = self.prompt[400:]
             final_response = text_response
 
@@ -55,7 +60,6 @@ class ChatController(object):
         return final_response
 
     def reset_chat(self):
-        print('Chat reset')
         self.bot_input_ids = None
         self.chat_history_ids = None
         self.last_chat_response = None

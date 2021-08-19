@@ -120,7 +120,7 @@ class VirtualAssistantClient(object):
     def vosk_callback(self, indata, frames, time, status):
         """This is called (from a separate thread) for each audio block."""
         if status:
-            print(status, file=sys.stderr)
+            self.log(status, file=sys.stderr)
         self.vosk_que.put(bytes(indata))
 
     
@@ -152,7 +152,7 @@ class VirtualAssistantClient(object):
         try:
             if self.USEVOICE:
                 if not self.GOOGLE:
-                    print('Listening...')
+                    self.log('Listening...')
                     with sd.RawInputStream(samplerate=self.SAMPLERATE, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
@@ -189,14 +189,14 @@ class VirtualAssistantClient(object):
 
     
     def disengage(self):
-        print('Disengaged')
+        self.log('Disengaged')
         self.ENGAGED = False
         requests.get(f'{self.api_url}/reset_chat')
 
     def wait_for_response(self):
         if self.USEVOICE:
             self.TIMER.cancel()
-            print('Waiting for response')
+            self.log('Waiting for response')
             self.ENGAGED = True
             self.TIMER = Timer(interval=self.TIMEOUT, function=self.disengage)
             self.TIMER.start()
@@ -215,6 +215,8 @@ class VirtualAssistantClient(object):
                     understanding = requests.get(f'{self.api_url}/understand/{text}').json()
                     response = understanding['response']
                     intent = understanding['intent']
+                    conf = understanding['conf']
+                    self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
 
                     if response:
                         self.say(response)

@@ -5,20 +5,25 @@ import json
 import requests
 import geocoder
 import os
-from nlp_utils import extract_subject
+from nlp_utils import extract_music
 
 class GeneralController(object):
-    def __init__(self, address, location):
+    def __init__(self, address, location, debug=False):
+        self.DEBUG = debug
         self.ADDRESS = address
         self.hot = 85
         self.cold = 55
         self.LOCATION = location
         self.OWM_API_KEY = os.environ['OWM_API_KEY']
 
+    def log(self, text, end='\n'):
+        if self.DEBUG:
+            print(text, end=end)
+
     def search(self, command):
         subject = extract_subject(command)
         if subject:
-            print(f'Searching {subject}...')
+            self.log(f'Searching {subject}...')
             try:
                 return wikipedia.summary(subject, 1)
             except:
@@ -31,10 +36,11 @@ class GeneralController(object):
         return f'It is {time}'
 
     def play(self, command):
-        subject = extract_subject(command)
-        if subject:
-            pywhatkit.playonyt(subject)
-            return f'Playing {subject}'
+        components = extract_music(command)
+        song = ' by '.join(components)
+        if song:
+            pywhatkit.playonyt(song)
+            return f'Playing {song}'
         else:
             return f'I didnt catch that {self.ADDRESS}, did you want me to play something?'
 
@@ -67,7 +73,9 @@ class GeneralController(object):
         if 'clear' in description:
             description = 'the skies are clear'
 
-        if 'weather' in command:
+        command_words = command.split()
+
+        if 'weather' in command_words:
             return f'{response}{temp_str} and {description}'
         
         '''
@@ -77,7 +85,7 @@ class GeneralController(object):
         3. determine if the response is Yes, No
         4. build the rest of the response
         '''
-        if ' hot ' in command or ' warm ' in command:
+        if 'hot' in command_words or 'warm' in command_words:
             if temp > self.hot:
                 response = f'Yes, it is quite hot{location}, {temp} degrees to be exact'
             elif temp > self.cold:
@@ -85,7 +93,7 @@ class GeneralController(object):
             else:
                 response = f'No, it is actually quite cold{location}, {temp} degrees to be exact'
 
-        elif ' cold ' in command or ' cool ' in command or ' chilly ' in command:
+        elif 'cold' in command_words or 'cool' in command_words or 'chilly' in command_words:
             if temp > self.hot:
                 response = f'No, it is actually quite hot{location}, {temp} degrees to be exact'
             elif temp > self.cold:
@@ -93,7 +101,7 @@ class GeneralController(object):
             else:
                 response = f'Yes, it is quite cold{location}, {temp} degrees to be exact'
         
-        elif ' comfortable ' in command or ' nice ' in command:
+        elif 'comfortable' in command_words or 'nice' in command_words:
             if temp > self.hot:
                 response = f'No, it is actually quite hot{location}, {temp} degrees to be exact'
             elif temp > self.cold:
@@ -101,10 +109,10 @@ class GeneralController(object):
             else:
                 response = f'No, it is actually quite cold{location}, {temp} degrees to be exact'
 
-        elif ' temp ' in command or ' temperature ' in command:
+        elif 'temp' in command_words or 'temperature' in command_words:
             response = temp_str
 
-        if ' skies ' in command or ' sky ' in command:
+        if ' skies ' in command_words or ' sky ' in command_words:
             if not response:
                 response = f'{description}{location}'
             else:

@@ -2,10 +2,13 @@ import datetime
 from rake_nltk import Rake
 from word2number import w2n
 from nltk.corpus import stopwords
+import spacy
 
+sp = spacy.load('en_core_web_sm')
 rake = Rake()
 
-STOPWORDS = set(stopwords.words('english'))
+STOPWORDS = list(set(stopwords.words('english')))
+STOPWORDS.extend(['some', 'what'])
 MONTHS = ['january', 'february', 'march', 'april', 'may', 'june','july', 'august', 'september','october', 'november', 'december']
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 DAY_OF_MONTH = {
@@ -177,7 +180,7 @@ def parse_date(text):
 def extract_subject(text):
     kw = rake.extract_keywords_from_text(text)
     ranked_phrases = rake.get_ranked_phrases()
-    filter(lambda w: not w in STOPWORDS, ranked_phrases)
+    #filter(lambda w: not w in STOPWORDS, ranked_phrases)
     if len(ranked_phrases) > 0:
         return ranked_phrases[0]
     return None
@@ -185,8 +188,29 @@ def extract_subject(text):
 def extract_keywords(text):
     kw = rake.extract_keywords_from_text(text)
     ranked_phrases = rake.get_ranked_phrases()
-    filter(lambda w: not w in STOPWORDS, ranked_phrases)
     return ranked_phrases
 
+def tokenize(text):
+    doc = sp(text)
+    return [token.text for token in doc]
+
+def extract_verbs(text):
+    doc = sp(text)
+    return [token.text for token in doc if token.pos_ == "VERB"]
+    
+def extract_entities(text):
+    doc = sp(text)
+    return doc.ents
+
+def extract_noun_chunks(text):
+    doc = sp(text)
+    return [chunk.text for chunk in doc.noun_chunks]
+
 if __name__ == '__main__':
-    print(clean_text('Testi\'ng the po,wer of. cleani\'ng t!his #text'))
+    while True:
+        text = input('input: ')
+        print(tokenize(text))
+        print(extract_noun_chunks(text))
+        print(extract_verbs(text))
+        print(extract_entities(text))
+        print(extract_keywords(text))
