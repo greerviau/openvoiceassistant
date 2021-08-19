@@ -74,8 +74,9 @@ try:
                     dump_fn.close()
                     dump_fn = None
                 else:
-                    print(rec.PartialResult())
+                    text = json.loads(rec.PartialResult())['partial']
                     if text:
+                        print('Hotword, writing data')
                         if dump_fn is None:
                             dump_fn = open('command.wav', "wb")
                         dump_fn.write(data)
