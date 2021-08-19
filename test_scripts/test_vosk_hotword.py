@@ -4,6 +4,7 @@ import queue
 import sounddevice as sd
 import vosk
 import sys
+import json
 
 q = queue.Queue()
 
