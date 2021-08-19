@@ -5,6 +5,7 @@ import sounddevice as sd
 import vosk
 import sys
 import json
+import speech_recognition as sr 
 
 q = queue.Queue()
 
@@ -46,6 +47,9 @@ parser.add_argument(
     '-r', '--samplerate', type=int, help='sampling rate')
 args = parser.parse_args(remaining)
 
+recog = sr.Recognizer()
+mic = sr.Microphone(device_index = args.device)
+
 try:
     if args.model is None:
         args.model = "model"
@@ -72,16 +76,16 @@ try:
             while True:
                 data = q.get()
                 if rec.AcceptWaveform(data):
-                    if dump_fn is not None:
-                        dump_fn.close()
-                        dump_fn = None
+                    print('Completed')
                 else:
                     text = json.loads(rec.PartialResult())['partial']
                     if text:
-                        print('Hotword, writing data')
-                        if dump_fn is None:
-                            dump_fn = open('command.wav', "wb")
-                        dump_fn.write(data)
+                        print('Hotword, listening...')
+                        with mic as source:
+                            audio = recog.listen(mic)
+                        with open('command.wav', 'wb') as file:
+                            file.write(audio.frame_data)
+                        
 
 except KeyboardInterrupt:
     print('\nDone')
