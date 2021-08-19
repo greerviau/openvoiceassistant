@@ -47,9 +47,6 @@ parser.add_argument(
     '-r', '--samplerate', type=int, help='sampling rate')
 args = parser.parse_args(remaining)
 
-recog = sr.Recognizer()
-mic = sr.Microphone(device_index = args.device)
-
 try:
     if args.model is None:
         args.model = "model"
@@ -76,15 +73,11 @@ try:
             while True:
                 data = q.get()
                 if rec.AcceptWaveform(data):
-                    print('Completed')
+                    print(rec.Result())
                 else:
-                    text = json.loads(rec.PartialResult())['partial']
-                    if text:
-                        print('Hotword, listening...')
-                        with mic as source:
-                            audio = recog.listen(mic)
-                        with open('command.wav', 'wb') as file:
-                            file.write(audio.frame_data)
+                    print(rec.PartialResult())
+                if dump_fn is not None:
+                    dump_fn.write(data)
                         
 
 except KeyboardInterrupt:
