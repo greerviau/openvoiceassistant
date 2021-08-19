@@ -72,7 +72,7 @@ try:
             while True:
                 data = q.get()
                 if rec.AcceptWaveform(data):
-                    if dump_fn is not None
+                    if dump_fn is not None:
                         dump_fn.close()
                         dump_fn = None
                 else:
