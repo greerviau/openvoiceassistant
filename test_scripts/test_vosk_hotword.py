@@ -5,9 +5,10 @@ import sounddevice as sd
 import vosk
 import sys
 import json
+import webrtcvad
+import numpy as np
 import speech_recognition as sr 
-
-q = queue.Queue()
+import requests
 
 def int_or_str(text):
     """Helper function for argument parsing."""
@@ -15,12 +16,6 @@ def int_or_str(text):
         return int(text)
     except ValueError:
         return text
-
-def callback(indata, frames, time, status):
-    """This is called (from a separate thread) for each audio block."""
-    if status:
-        print(status, file=sys.stderr)
-    q.put(bytes(indata))
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument(
@@ -47,39 +42,82 @@ parser.add_argument(
     '-r', '--samplerate', type=int, help='sampling rate')
 args = parser.parse_args(remaining)
 
-try:
-    if args.model is None:
-        args.model = "model"
-    if not os.path.exists(args.model):
-        print ("Please download a model for your language from https://alphacephei.com/vosk/models")
-        print ("and unpack as 'model' in the current folder.")
-        parser.exit(0)
-    if args.samplerate is None:
-        device_info = sd.query_devices(args.device, 'input')
-        # soundfile expects an int, sounddevice provides a float:
-        args.samplerate = int(device_info['default_samplerate'])
+if args.model is None:
+    args.model = "model"
+if not os.path.exists(args.model):
+    print ("Please download a model for your language from https://alphacephei.com/vosk/models")
+    print ("and unpack as 'model' in the current folder.")
+    parser.exit(0)
+if args.samplerate is None:
+    device_info = sd.query_devices(args.device, 'input')
+    # soundfile expects an int, sounddevice provides a float:
+    args.samplerate = int(device_info['default_samplerate'])
 
+q = queue.Queue()
+block_size = 8000
+hotword = 'jasper'
+
+#vad = webrtcvad.Vad()
+
+recog = sr.Recognizer()
+print(sr.Microphone.list_microphone_names())
+mic = sr.Microphone(device_index = args.device)
+
+hot = False
+
+def callback(indata, frames, time, status):
+    """This is called (from a separate thread) for each audio block."""
+    if status:
+        print(status, file=sys.stderr)
+    q.put(bytes(indata))
+
+def listen_callback(recognizer, audio):
+    global hot
+    print(f'callback {hot}')
+    if hot:
+        '''
+        print('Saving...')
+        with open("microphone-results.wav", "wb") as f:
+            f.write(audio.get_wav_data())
+        print('Saved')
+        '''
+        print('Transcribing...')
+        files = {'audio_file': audio.get_wav_data()}
+        response = requests.post(
+            'http://10.0.0.120:8000/understand_from_audio',
+            files=files
+        )
+        print(f'Response: {response.json()}')
+        hot = False
+
+with mic as source:
+    recog.adjust_for_ambient_noise(source)
+
+stop_listening = recog.listen_in_background(mic, listen_callback)
+
+try:
     model = vosk.Model(args.model)
 
-    dump_fn = None
-
-    with sd.RawInputStream(samplerate=args.samplerate, blocksize = 8000, device=args.device, dtype='int16',
+    with sd.RawInputStream(samplerate=args.samplerate, blocksize = block_size, device=args.device, dtype='int16',
                             channels=1, callback=callback):
-            print('#' * 80)
-            print('Press Ctrl+C to stop the recording')
-            print('#' * 80)
+        print('#' * 80)
+        print('Press Ctrl+C to stop the recording')
+        print('#' * 80)
 
-            rec = vosk.KaldiRecognizer(model, args.samplerate, '["jasper", "[unk]"]')
-            while True:
-                data = q.get()
-                if rec.AcceptWaveform(data):
-                    print(rec.Result())
-                else:
-                    print(rec.PartialResult())
-                if dump_fn is not None:
-                    dump_fn.write(data)
-                        
+        rec = vosk.KaldiRecognizer(model, args.samplerate, f'["{hotword}", "[unk]"]')
+        while True:
+            data = q.get()
 
+            if rec.AcceptWaveform(data):
+                text = rec.Result()
+            else:
+                text = json.loads(rec.PartialResult())['partial']
+                #print(text)
+                if hotword in text and not hot:
+                    print('Hotword')
+                    hot = True
+                    print('Listening...')
+                    
 except KeyboardInterrupt:
     print('\nDone')
     parser.exit(0)

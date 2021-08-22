@@ -58,7 +58,7 @@ class VirtualAssistantClient(object):
         self.NAME = name_and_address['name']
         self.ADDRESS = name_and_address['address']
 
-        self.vosk_model = vosk.Model('vosk')
+        self.vosk_model = vosk.Model('vosk_small')
         self.vosk_que = queue.Queue()
 
         self.recog = sr.Recognizer()
@@ -70,6 +70,8 @@ class VirtualAssistantClient(object):
         self.device = output[0]
         self.log(f'Device {devices[self.device]} index {self.device}')
         self.mic = sr.Microphone(device_index = self.device)
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
 
         device_info = sd.query_devices(self.device, 'input')
         if self.SAMPLERATE is None:
@@ -90,12 +92,15 @@ class VirtualAssistantClient(object):
             self.tts.setProperty('rate',175)
     
         self.ENGAGED = True
+        self.HOT = False
         self.TIMEOUT = 15.0
         self.TIMER = Timer(interval=30.0, function=self.disengage)
         if self.USEVOICE:
             self.TIMER.start()
 
         self.say(f'How can I help {self.ADDRESS}?')
+
+        self.stop_listening = self.recog.listen_in_background(self.mic, self.listen_callback)
 
     def log(self, log_text, end='\n'):
         if self.DEBUG:
@@ -123,6 +128,26 @@ class VirtualAssistantClient(object):
             self.log(status, file=sys.stderr)
         self.vosk_que.put(bytes(indata))
 
+    def listen_callback(self, recognizer, audio):
+        self.log(f'callback {self.HOT}')
+        if self.HOT or self.ENGAGED:
+            '''
+            print('Saving...')
+            with open("microphone-results.wav", "wb") as f:
+                f.write(audio.get_wav_data())
+            print('Saved')
+            '''
+            self.log('Transcribing...')
+            files = {'audio_file': audio.get_wav_data()}
+            response = requests.post(
+                'http://10.0.0.120:8000/understand_from_audio',
+                files=files
+            )
+            if response.status_code == 200:
+                understanding = response.json()
+                self.log(f'Response: {understanding}')
+                self.decide_from_understanding(understanding)
+            self.HOT = False
     
     def shutdown(self):
         print('Shutdown...')
@@ -148,45 +173,57 @@ class VirtualAssistantClient(object):
             audio = AudioSegment.from_wav('response.wav')
             play(audio)
     
-    def listen(self):
-        try:
-            if self.USEVOICE:
-                if not self.GOOGLE:
-                    self.log('Listening...')
-                    with sd.RawInputStream(samplerate=self.SAMPLERATE, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
+    def understand_from_google(self):
+        text = ''
+        while True:
+            while True:
+                with self.mic as source:
+                    self.recog.adjust_for_ambient_noise(source)
+                    audio = self.recog.listen(source)
+                    try:
+                        text = self.recog.recognize_google(audio)
+                        #print(text)
+                        break
+                    except Exception as e:
+                        print(e)
+                        pass
+
+            if text:
+                text = clean_text(text)
+                self.log(f'cleaned: {text}')
+                if self.NAME in text or self.ENGAGED:
+                    self.stop_waiting()
+                    understanding = requests.get(f'{self.api_url}/understand/{text}').json()
+                    self.decide_from_understanding(understanding)
+        
+    def understand_from_hotword(self):
+        with sd.RawInputStream(samplerate=self.SAMPLERATE, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
                                     channels=1, callback=self.vosk_callback):
 
-                        rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
-                        while True:
-                            data = self.vosk_que.get()
-                            if rec.AcceptWaveform(data):
-                                text = json.loads(rec.Result())['text']
-                                print(f'\r{text}')
-                                return text
-                            else:
-                                text = json.loads(rec.PartialResult())['partial']
-                                if text:
-                                    self.stop_waiting()
-                                print(f'\r{text}', end='')
+            rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
+            while True:
+                data = self.vosk_que.get()
+                if rec.AcceptWaveform(data):
+                    text = rec.Result()
                 else:
-                    while True:
-                        print('Listening...')
-                        with self.mic as source:
-                            self.recog.adjust_for_ambient_noise(source)
-                            audio = self.recog.listen(source)
-                            try:
-                                text = self.recog.recognize_google(audio)
-                                print(text)
-                                return text
-                            except Exception as e:
-                                print(e)
-                                pass
-            else:
-                return input('You: ')
-        except Exception as ex:
-            self.log(ex)
-            self.shutdown()
+                    text = json.loads(rec.PartialResult())['partial']
+                    if self.NAME in text and not self.HOT:
+                        self.log('Hotword')
+                        self.HOT = True
+                        self.log('Listening...')
 
+    def decide_from_understanding(self, understanding):
+        response = understanding['response']
+        intent = understanding['intent']
+        conf = understanding['conf']
+        self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
+
+        if response:
+            self.say(response)
+            self.wait_for_response()
+        
+        if intent == 'shutdown':
+            self.shutdown()
     
     def disengage(self):
         self.log('Disengaged')
@@ -205,25 +242,22 @@ class VirtualAssistantClient(object):
         self.TIMER.cancel()
 
     def run(self):
-        while True:
-            text = self.listen()
-            if text:
-                text = clean_text(text)
-                self.log(f'cleaned: {text}')
-                if self.NAME in text or self.ENGAGED:
-                    self.stop_waiting()
+        try:
+            if self.USEVOICE:
+                self.log('Listening...')
+                if self.GOOGLE:
+                    self.understand_from_google()
+                else:
+                    self.understand_from_hotword()
+            else:
+                while True:
+                    text = input('You: ')
                     understanding = requests.get(f'{self.api_url}/understand/{text}').json()
-                    response = understanding['response']
-                    intent = understanding['intent']
-                    conf = understanding['conf']
-                    self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
+                    self.decide_from_understanding(understanding)
 
-                    if response:
-                        self.say(response)
-                        self.wait_for_response()
-                    
-                    if intent == 'shutdown':
-                        self.shutdown()
+        except Exception as ex:
+                self.log(ex)
+                self.shutdown()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')

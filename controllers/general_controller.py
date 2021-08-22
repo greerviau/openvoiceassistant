@@ -5,7 +5,7 @@ import json
 import requests
 import geocoder
 import os
-from nlp_utils import extract_music
+from nlp_utils import extract_noun_chunks, extract_subject
 
 class GeneralController(object):
     def __init__(self, address, location, debug=False):
@@ -36,7 +36,7 @@ class GeneralController(object):
         return f'It is {time}'
 
     def play(self, command):
-        components = extract_music(command)
+        components = extract_subject(command)
         song = ' by '.join(components)
         if song:
             pywhatkit.playonyt(song)

@@ -3,7 +3,7 @@ dc_tts/
 .vector_cache/
 lj_data/
 Real-Time-Voice-Cloning/
-vosk/
+vosk_big
 credentials.json
 token.json
 vocab.p
@@ -15,3 +15,6 @@ synth_response.wav
 deepspeech-0.9.3-models.pbmm
 deepspeech-0.9.3-models.scorer
 deepspeech_requirements.txt
+vosk_small
+vosk-server
+command.wav
