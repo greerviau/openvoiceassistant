@@ -7,6 +7,7 @@ sudo apt upgrade
 sudo apt install libportaudio2
 sudo apt install libatlas-base-dev
 sudo apt install libespeak1
+sudo apt install ffmpeg
 ```
 Clone the repository
 ```

@@ -16,6 +16,8 @@ from utils import clean_text
 import scapy.all as scapy
 import socket
 import argparse
+import wave
+import base64
 
 class VirtualAssistantClient(object):
     
@@ -54,7 +56,7 @@ class VirtualAssistantClient(object):
         self.log(f'\nFound VA HUB | ip: {host}')
 
         self.api_url = f'http://{host}:{port}'
-        name_and_address = requests.get(f'{self.api_url}/get_name_and_address').json()
+        name_and_address = requests.get(f'{self.api_url}/get_hub_details').json()
         self.NAME = name_and_address['name']
         self.ADDRESS = name_and_address['address']
 
@@ -70,8 +72,6 @@ class VirtualAssistantClient(object):
         self.device = output[0]
         self.log(f'Device {devices[self.device]} index {self.device}')
         self.mic = sr.Microphone(device_index = self.device)
-        with self.mic as source:
-            self.recog.adjust_for_ambient_noise(source)
 
         device_info = sd.query_devices(self.device, 'input')
         if self.SAMPLERATE is None:
@@ -98,9 +98,7 @@ class VirtualAssistantClient(object):
         if self.USEVOICE:
             self.TIMER.start()
 
-        self.say(f'How can I help {self.ADDRESS}?')
-
-        self.stop_listening = self.recog.listen_in_background(self.mic, self.listen_callback)
+        self.synth_and_say(f'How can I help {self.ADDRESS}?')
 
     def log(self, log_text, end='\n'):
         if self.DEBUG:
@@ -154,10 +152,10 @@ class VirtualAssistantClient(object):
         self.TIMER.cancel()
         sys.exit(0)
 
-    def say(self, text):
+    def synth_and_say(self, text):
         print(f'{self.NAME}: {text}')
         if self.SYNTHVOICE:
-            with open('./response.wav', 'wb') as audio_file:
+            with open('./client_response.wav', 'wb') as audio_file:
                 if self.WATSON:
                     audio_file.write(
                         self.text_to_speech.synthesize(
@@ -170,15 +168,18 @@ class VirtualAssistantClient(object):
                         requests.get(f'{self.api_url}/synth_voice/{text}').content
                     )
 
-            audio = AudioSegment.from_wav('response.wav')
-            play(audio)
+            self.say()
+
+    def say(self):
+        audio = AudioSegment.from_wav('client_response.wav')
+        play(audio)
     
-    def understand_from_google(self):
+    def listen_with_google(self):
         text = ''
-        while True:
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
             while True:
-                with self.mic as source:
-                    self.recog.adjust_for_ambient_noise(source)
+                while True:
                     audio = self.recog.listen(source)
                     try:
                         text = self.recog.recognize_google(audio)
@@ -187,39 +188,81 @@ class VirtualAssistantClient(object):
                     except Exception as e:
                         print(e)
                         pass
-
-            if text:
-                text = clean_text(text)
-                self.log(f'cleaned: {text}')
-                if self.NAME in text or self.ENGAGED:
-                    self.stop_waiting()
-                    understanding = requests.get(f'{self.api_url}/understand/{text}').json()
-                    self.decide_from_understanding(understanding)
+                if text:
+                    text = clean_text(text)
+                    self.log(f'cleaned: {text}')
+                    if self.NAME in text or self.ENGAGED:
+                        self.stop_waiting()
+                        self.understand_from_text_and_synth(text)
         
-    def understand_from_hotword(self):
-        with sd.RawInputStream(samplerate=self.SAMPLERATE, blocksize = self.BLOCKSIZE, device=self.device, dtype='int16',
-                                    channels=1, callback=self.vosk_callback):
-
+    def listen_with_hotword(self):
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
             rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
             while True:
-                data = self.vosk_que.get()
-                if rec.AcceptWaveform(data):
-                    text = rec.Result()
-                else:
-                    text = json.loads(rec.PartialResult())['partial']
-                    if self.NAME in text and not self.HOT:
-                        self.log('Hotword')
-                        self.HOT = True
-                        self.log('Listening...')
+                audio = self.recog.listen(source)
+                self.log('Done Listening')
+                with open('client_command.wav', 'wb') as f:
+                    f.write(audio.get_wav_data())
+                wave_reader = wave.open('client_command.wav', 'rb')
+                
+                final = []
+                while True:
+                    data = wave_reader.readframes(4000)
+                    if len(data) == 0:
+                        break
+                    if rec.AcceptWaveform(data):
+                        rec.Result()
+                    else:
+                        partial = json.loads(rec.PartialResult())['partial']
+                        final = list(set().union(partial.split(), final))
 
-    def decide_from_understanding(self, understanding):
+                if self.NAME in final or self.ENGAGED:
+                    self.stop_waiting()
+                    self.understand_from_audio_and_synth(audio)
+
+    def understand_from_audio_and_synth(self, audio):
+        files = {'audio_file': audio.get_wav_data()}
+        response = requests.post(
+            'http://10.0.0.120:8000/understand_from_audio_and_synth',
+            files=files
+        )
+        if response.status_code == 200:
+            understanding = response.json()
+            self.process_understanding_and_say(understanding)
+
+    def understand_from_text_and_synth(self, text):
+        response = requests.get(f'{self.api_url}/understand_from_text_and_synth/{text}')
+        if response.status_code == 200:
+            understanding = response.content
+            self.process_understanding_and_say(understanding)
+
+    def process_understanding_and_synth(self, understanding):
         response = understanding['response']
         intent = understanding['intent']
         conf = understanding['conf']
         self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
 
         if response:
-            self.say(response)
+            print(f'{self.NAME}: {response}')
+            self.synth_and_say(response)
+            self.wait_for_response()
+        
+        if intent == 'shutdown':
+            self.shutdown()
+
+    def process_understanding_and_say(self, understanding):
+        response = understanding['response']
+        intent = understanding['intent']
+        conf = understanding['conf']
+        synth = base64.b64decode(understanding['synth'])
+        self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
+        if response:
+            print(f'{self.NAME}: {response}')
+            if self.SYNTHVOICE:
+                with open('./client_response.wav', 'wb') as audio_file:
+                    audio_file.write(synth)
+            self.say()
             self.wait_for_response()
         
         if intent == 'shutdown':
@@ -246,14 +289,14 @@ class VirtualAssistantClient(object):
             if self.USEVOICE:
                 self.log('Listening...')
                 if self.GOOGLE:
-                    self.understand_from_google()
+                    self.listen_with_google()
                 else:
-                    self.understand_from_hotword()
+                    self.listen_with_hotword()
             else:
                 while True:
                     text = input('You: ')
                     understanding = requests.get(f'{self.api_url}/understand/{text}').json()
-                    self.decide_from_understanding(understanding)
+                    self.understand_from_text_and_synth(understanding)
 
         except Exception as ex:
                 self.log(ex)

@@ -9,12 +9,13 @@ token.json
 vocab.p
 pywhatkit_dbs.txt
 intent_model.h5
-response.wav
-synth_response.wav
+server_response.wav
+client_response.wav
 ._audio
 deepspeech-0.9.3-models.pbmm
 deepspeech-0.9.3-models.scorer
 deepspeech_requirements.txt
 vosk_small
 vosk-server
-command.wav
+server_command.wav
+client_command.wav
