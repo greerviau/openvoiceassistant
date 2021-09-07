@@ -119,33 +119,6 @@ class VirtualAssistantClient(object):
             result.append(client_dict)
 
         return result
-
-    def vosk_callback(self, indata, frames, time, status):
-        """This is called (from a separate thread) for each audio block."""
-        if status:
-            self.log(status, file=sys.stderr)
-        self.vosk_que.put(bytes(indata))
-
-    def listen_callback(self, recognizer, audio):
-        self.log(f'callback {self.HOT}')
-        if self.HOT or self.ENGAGED:
-            '''
-            print('Saving...')
-            with open("microphone-results.wav", "wb") as f:
-                f.write(audio.get_wav_data())
-            print('Saved')
-            '''
-            self.log('Transcribing...')
-            files = {'audio_file': audio.get_wav_data()}
-            response = requests.post(
-                'http://10.0.0.120:8000/understand_from_audio',
-                files=files
-            )
-            if response.status_code == 200:
-                understanding = response.json()
-                self.log(f'Response: {understanding}')
-                self.decide_from_understanding(understanding)
-            self.HOT = False
     
     def shutdown(self):
         print('Shutdown...')
@@ -224,7 +197,7 @@ class VirtualAssistantClient(object):
     def understand_from_audio_and_synth(self, audio):
         files = {'audio_file': audio.get_wav_data()}
         response = requests.post(
-            'http://10.0.0.120:8000/understand_from_audio_and_synth',
+            f'{self.api_url}/understand_from_audio_and_synth',
             files=files
         )
         if response.status_code == 200:
