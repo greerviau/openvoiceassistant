@@ -71,6 +71,9 @@ class VirtualAssistantClient(object):
         self.log(f'Device {devices[self.device]} index {self.device}')
         self.mic = sr.Microphone(device_index = self.device)
 
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
+
         device_info = sd.query_devices(self.device, 'input')
         if self.SAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
@@ -189,7 +192,7 @@ class VirtualAssistantClient(object):
                     else:
                         partial = json.loads(rec.PartialResult())['partial']
                         final = list(set().union(partial.split(), final))
-                        
+
                 self.log('Done checking')
 
                 if self.NAME in final or self.ENGAGED:
