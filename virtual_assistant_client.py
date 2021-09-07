@@ -178,21 +178,25 @@ class VirtualAssistantClient(object):
                     f.write(audio.get_wav_data())
                 wave_reader = wave.open('client_command.wav', 'rb')
                 
-                final = []
-                self.log('Checking for hotword...')
-                while True:
-                    data = wave_reader.readframes(4000)
-                    if len(data) == 0:
-                        break
-                    if rec.AcceptWaveform(data):
-                        rec.Result()
-                    else:
-                        partial = json.loads(rec.PartialResult())['partial']
-                        final = list(set().union(partial.split(), final))
+                if not self.ENGAGED:
+                    final = []
+                    self.log('Checking for hotword...')
+                    while True:
+                        data = wave_reader.readframes(4000)
+                        if len(data) == 0:
+                            break
+                        if rec.AcceptWaveform(data):
+                            rec.Result()
+                        else:
+                            partial = json.loads(rec.PartialResult())['partial']
+                            final = list(set().union(partial.split(), final))
 
-                self.log('Done checking')
+                    self.log('Done checking')
 
-                if self.NAME in final or self.ENGAGED:
+                    if self.NAME in final:
+                        self.stop_waiting()
+                        self.understand_from_audio_and_synth(audio)      
+                else: 
                     self.stop_waiting()
                     self.understand_from_audio_and_synth(audio)
 
