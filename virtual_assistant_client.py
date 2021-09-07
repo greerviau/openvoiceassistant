@@ -1,6 +1,5 @@
 import speech_recognition as sr 
 import sounddevice as sd
-import pyttsx3
 from ibm_watson import TextToSpeechV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from pydub import AudioSegment
@@ -14,7 +13,6 @@ import queue
 import requests
 from utils import clean_text
 import scapy.all as scapy
-import socket
 import argparse
 import wave
 import base64
@@ -85,11 +83,6 @@ class VirtualAssistantClient(object):
                 authenticator=authenticator
             )
             self.text_to_speech.set_service_url('https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/558fb7c3-30e9-4fe7-8861-46cd1031caf9')
-
-        else:
-            self.tts = pyttsx3.init()
-            self.tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enGB_GeorgeM')
-            self.tts.setProperty('rate',175)
     
         self.ENGAGED = True
         self.HOT = False

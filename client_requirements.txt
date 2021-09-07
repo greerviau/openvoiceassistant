@@ -3,11 +3,7 @@ vosk
 pydub
 ibm_cloud_sdk_core
 ibm_watson
-pyttsx3
 sounddevice
 SpeechRecognition
-nltk
-rake-nltk
-word2number
 numpy
 pyaudio
