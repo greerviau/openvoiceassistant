@@ -149,7 +149,9 @@ class VirtualAssistantClient(object):
             self.recog.adjust_for_ambient_noise(source)
             while True:
                 while True:
+                    self.log('Listening...')
                     audio = self.recog.listen(source)
+                    self.log('Done Listening')
                     try:
                         text = self.recog.recognize_google(audio)
                         #print(text)
@@ -169,6 +171,7 @@ class VirtualAssistantClient(object):
             self.recog.adjust_for_ambient_noise(source)
             rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
             while True:
+                self.log('Listening...')
                 audio = self.recog.listen(source)
                 self.log('Done Listening')
                 with open('client_command.wav', 'wb') as f:
@@ -176,6 +179,7 @@ class VirtualAssistantClient(object):
                 wave_reader = wave.open('client_command.wav', 'rb')
                 
                 final = []
+                self.log('Checking for hotword...')
                 while True:
                     data = wave_reader.readframes(4000)
                     if len(data) == 0:
@@ -185,6 +189,8 @@ class VirtualAssistantClient(object):
                     else:
                         partial = json.loads(rec.PartialResult())['partial']
                         final = list(set().union(partial.split(), final))
+                        
+                self.log('Done checking')
 
                 if self.NAME in final or self.ENGAGED:
                     self.stop_waiting()
@@ -256,7 +262,6 @@ class VirtualAssistantClient(object):
     def run(self):
         try:
             if self.USEVOICE:
-                self.log('Listening...')
                 if self.GOOGLE:
                     self.listen_with_google()
                 else:
