@@ -137,8 +137,11 @@ class VirtualAssistantClient(object):
             self.say()
 
     def say(self):
+        '''
         audio = AudioSegment.from_wav('client_response.wav')
         play(audio)
+        '''
+        os.system('aplay client_response.wav')
     
     def listen_with_google(self):
         text = ''
