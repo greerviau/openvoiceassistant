@@ -6,6 +6,7 @@ import requests
 import geocoder
 import os
 from nlp_utils import extract_noun_chunks, extract_subject
+from utils import get_after
 
 class GeneralController(object):
     def __init__(self, address, location, debug=False):

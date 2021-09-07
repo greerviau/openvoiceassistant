@@ -181,9 +181,8 @@ def extract_subject(text):
     kw = rake.extract_keywords_from_text(text)
     ranked_phrases = rake.get_ranked_phrases()
     #filter(lambda w: not w in STOPWORDS, ranked_phrases)
-    if len(ranked_phrases) > 0:
-        return ranked_phrases[0]
-    return None
+    print(ranked_phrases)
+    return ranked_phrases
 
 def extract_keywords(text):
     kw = rake.extract_keywords_from_text(text)

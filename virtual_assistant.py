@@ -74,10 +74,11 @@ class VirtualAssistant(object):
                     if intent == 'math':
                         #todo
                         response = self.generalControl.answer_math(command)
-                
+                '''
                 if not response:
                     response = self.chatControl.chat(command)
-
+                '''
+                
                 return (response, intent, conf)
 
             else:

@@ -18,7 +18,7 @@ vosk_model = Model('vosk_big')
 
 app = FastAPI()
 
-VA = VirtualAssistant(name='jasper', address='sir', debug=False)
+VA = VirtualAssistant(name='jarvis', address='sir', debug=False)
 
 host = '10.0.0.120'
 port = 8000
@@ -101,33 +101,42 @@ async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
         fd.write(file_data)
     wf = wave.open('server_command.wav', 'rb')
     rec = KaldiRecognizer(vosk_model, wf.getframerate())
+    res = None
     while True:
         data = wf.readframes(4000)
         if len(data) == 0:
             break
         if rec.AcceptWaveform(data):
             res = json.loads(rec.Result())
-            #print (res['text'])
+            print(res['text'])
+        else:
+            rec.PartialResult()
     res = json.loads(rec.FinalResult())
-    command = res['text']
-    if not command:
-        raise HTTPException(
-                status_code=404,
-                detail='command invalid',
-                headers={'X-Error': 'There goes my error'})
+    if res:
+        command = res['text']
+        if not command:
+            raise HTTPException(
+                    status_code=404,
+                    detail='command invalid',
+                    headers={'X-Error': 'There goes my error'})
 
-    command = clean_text(command)
-    print(command)
-    response, intent, conf = VA.understand(command)
-    tts.save_to_file(response, 'server_response.wav')
-    tts.runAndWait()
-    return {
-        'command': command,
-        'response':response,
-        'intent':intent,
-        'conf':conf,
-        'synth':base64.b64encode(open('server_response.wav', 'rb').read())
-    }
+        command = clean_text(command)
+        print(command)
+        response, intent, conf = VA.understand(command)
+        tts.save_to_file(response, 'server_response.wav')
+        tts.runAndWait()
+        return {
+            'command': command,
+            'response':response,
+            'intent':intent,
+            'conf':conf,
+            'synth':base64.b64encode(open('server_response.wav', 'rb').read())
+        }
+    else:
+        raise HTTPException(
+                    status_code=404,
+                    detail='invalid audio',
+                    headers={'X-Error': 'There goes my error'})
 
 @app.get('/understand_from_text/{text}')
 def understand_from_text(text: str):
@@ -142,7 +151,7 @@ def understand_from_text(text: str):
     }
 
 @app.get('/understand_from_text_and_synth/{text}')
-async def understand_from_text_and_synth(text: str):
+def understand_from_text_and_synth(text: str):
     command = clean_text(text)
     print(command)
     response, intent, conf = VA.understand(command)
@@ -155,15 +164,13 @@ async def understand_from_text_and_synth(text: str):
     response, intent, conf = VA.understand(command)
     tts.save_to_file(response, 'server_response.wav')
     tts.runAndWait()
-    with open('server_response.wav', 'rb') as fd:
-        contents = fd.read()
-        return {
-            'command': command,
-            'response':response,
-            'intent':intent,
-            'conf':conf,
-            'synth':Response(content = contents)
-        }
+    return {
+        'command': command,
+        'response':response,
+        'intent':intent,
+        'conf':conf,
+        'synth':base64.b64encode(open('server_response.wav', 'rb').read())
+    }
 
 @app.get('/synth_voice/{text}')
 def synth_voice(text: str):

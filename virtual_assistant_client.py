@@ -19,7 +19,7 @@ import base64
 
 class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, blocksize, samplerate, debug):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, blocksize, samplerate, debug, rpi):
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.WATSON = watson
@@ -27,12 +27,16 @@ class VirtualAssistantClient(object):
         self.BLOCKSIZE = blocksize
         self.SAMPLERATE = samplerate
         self.DEBUG = debug
+        self.RPI = rpi
 
         self.log(f'Debug Mode: {self.DEBUG}')
         self.log(f'Use Voice Input: {self.USEVOICE}')
         self.log(f'Using GOOGLE: {self.GOOGLE}')
         self.log(f'Synth Voice Output: {self.USEVOICE}')
         self.log(f'Using WATSON: {self.WATSON}')
+        self.log(f'RPI: {self.RPI}')
+        self.log(f'Samplerate: {self.SAMPLERATE}')
+        self.log(f'Blocksize: {self.BLOCKSIZE}')
 
         port = 8000
         if not hub_ip:
@@ -74,8 +78,6 @@ class VirtualAssistantClient(object):
         device_info = sd.query_devices(self.device, 'input')
         if self.SAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
-
-        self.log(self.SAMPLERATE)
 
         if self.WATSON:
             authenticator = IAMAuthenticator(os.environ['IBM_API_KEY'])
@@ -137,11 +139,11 @@ class VirtualAssistantClient(object):
             self.say()
 
     def say(self):
-        '''
-        audio = AudioSegment.from_wav('client_response.wav')
-        play(audio)
-        '''
-        os.system('aplay client_response.wav')
+        if not self.RPI:
+            audio = AudioSegment.from_wav('client_response.wav')
+            play(audio)
+        else:
+            os.system('aplay client_response.wav')
     
     def listen_with_google(self):
         text = ''
@@ -213,7 +215,7 @@ class VirtualAssistantClient(object):
     def understand_from_text_and_synth(self, text):
         response = requests.get(f'{self.api_url}/understand_from_text_and_synth/{text}')
         if response.status_code == 200:
-            understanding = response.content
+            understanding = response.json()
             self.process_understanding_and_say(understanding)
 
     def process_understanding_and_synth(self, understanding):
@@ -291,6 +293,7 @@ if __name__ == '__main__':
     parser.add_argument('--blocksize', type=int, help='Blocksize for voice capture', default=8000)
     parser.add_argument('--samplerate', type=int, help='Samplerate for microphone', default=None)
     parser.add_argument('--debug', help='Synthesize voice as output', action='store_true')
+    parser.add_argument('--rpi', help='Running on raspberry pi', action='store_true')
 
     args = parser.parse_args()
     assistant = VirtualAssistantClient(*vars(args).values())
