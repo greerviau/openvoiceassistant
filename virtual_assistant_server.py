@@ -101,19 +101,20 @@ async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
         fd.write(file_data)
     wf = wave.open('server_command.wav', 'rb')
     rec = KaldiRecognizer(vosk_model, wf.getframerate())
+    rec.SetWords(True)
     res = None
     while True:
         data = wf.readframes(4000)
         if len(data) == 0:
             break
         if rec.AcceptWaveform(data):
-            res = json.loads(rec.Result())
-            print(res['text'])
+            print('Result ', rec.Result())
         else:
-            rec.PartialResult()
-    res = json.loads(rec.FinalResult())
+            print('Partial ', rec.PartialResult())
+    res = rec.FinalResult()
+    print('Final ', res)
     if res:
-        command = res['text']
+        command = json.loads(res)['text']
         if not command:
             raise HTTPException(
                     status_code=404,

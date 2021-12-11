@@ -26,3 +26,4 @@ geocoder
 google-api-python-client
 pytz
 fastapi
+spacy

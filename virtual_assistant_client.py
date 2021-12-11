@@ -165,7 +165,6 @@ class VirtualAssistantClient(object):
                     text = clean_text(text)
                     self.log(f'cleaned: {text}')
                     if self.NAME in text or self.ENGAGED:
-                        self.stop_waiting()
                         self.understand_from_text_and_synth(text)
         
     def listen_with_hotword(self):
@@ -196,10 +195,8 @@ class VirtualAssistantClient(object):
                     self.log('Done checking')
 
                     if self.NAME in final:
-                        self.stop_waiting()
                         self.understand_from_audio_and_synth(audio)      
                 else: 
-                    self.stop_waiting()
                     self.understand_from_audio_and_synth(audio)
 
     def understand_from_audio_and_synth(self, audio):
@@ -233,6 +230,7 @@ class VirtualAssistantClient(object):
             self.shutdown()
 
     def process_understanding_and_say(self, understanding):
+        self.stop_waiting()
         response = understanding['response']
         intent = understanding['intent']
         conf = understanding['conf']
@@ -275,8 +273,8 @@ class VirtualAssistantClient(object):
             else:
                 while True:
                     text = input('You: ')
-                    understanding = requests.get(f'{self.api_url}/understand/{text}').json()
-                    self.understand_from_text_and_synth(understanding)
+                    #understanding = requests.get(f'{self.api_url}/understand/{text}').json()
+                    self.understand_from_text_and_synth(text)
 
         except Exception as ex:
                 self.log(ex)
