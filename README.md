@@ -19,3 +19,5 @@ Install packages
 pip3 install -r client_requirements.txt
 ```
 If using Adafruit I2S MEMS Microphone for input, follow wiring and installation instructions found [here](https://learn.adafruit.com/adafruit-i2s-mems-microphone-breakout/raspberry-pi-wiring-test)
+
+For Seeed Repeaker 2-Mic Pi Hat, follow the installation instructions found [here](https://wiki.seeedstudio.com/ReSpeaker_2_Mics_Pi_HAT_Raspberry/)
