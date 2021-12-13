@@ -156,22 +156,6 @@ class VirtualAssistantClient(object):
     def save_audio(self, audio):
         with open('client_command.wav', 'wb') as f:
             f.write(audio.get_wav_data())
-    
-    def check_for_hotword(self):
-        final = []
-        self.log('Checking for hotword...')
-        wave_reader = wave.open('client_command.wav', 'rb')
-        while True:
-            data = wave_reader.readframes(4000)
-            if len(data) == 0:
-                break
-            if rec.AcceptWaveform(data):
-                rec.Result()
-            else:
-                partial = json.loads(rec.PartialResult())['partial']
-                final = list(set().union(partial.split(), final))
-        self.log('Done checking')
-        return final
                 
     def listen_with_google(self):
         text = ''
@@ -196,12 +180,25 @@ class VirtualAssistantClient(object):
         with self.mic as source:
             self.recog.adjust_for_ambient_noise(source)
             rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
+
             while True:
                 audio = self.listen(source)
 
                 self.save_audio(audio)
                 if not self.ENGAGED:
-                    final = self.check_for_hotword()
+                    final = []
+                    self.log('Checking for hotword...')
+                    wave_reader = wave.open('client_command.wav', 'rb')
+                    while True:
+                        data = wave_reader.readframes(4000)
+                        if len(data) == 0:
+                            break
+                        if rec.AcceptWaveform(data):
+                            rec.Result()
+                        else:
+                            partial = json.loads(rec.PartialResult())['partial']
+                            final = list(set().union(partial.split(), final))
+                    self.log('Done checking')
                     if self.NAME in final:
                         self.understand_from_audio_and_synth(audio)      
                 else: 
