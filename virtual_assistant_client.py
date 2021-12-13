@@ -73,14 +73,6 @@ class VirtualAssistantClient(threading.Thread):
         self.log(f'Blocksize: {self.BLOCKSIZE}')
 
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
-
-    def input_stream_callback(self, indata, frames, time, status):
-        """This is called (from a separate thread) for each audio block."""
-        if status:
-            print(status, file=sys.stderr)
-        self.vosk_queue.put(bytes(indata))
-        self.record_queue.put(indata.copy())
-
         
     def scan(self, ip):
         arp_req_frame = scapy.ARP(pdst = ip)
@@ -169,10 +161,19 @@ class VirtualAssistantClient(threading.Thread):
         vosk_model = vosk.Model('vosk_small')
         rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
 
+        def input_stream_callback(indata, frames, time, status):
+            """This is called (from a separate thread) for each audio block."""
+            if status:
+                print(status, file=sys.stderr)
+            self.vosk_queue.put(bytes(indata))
+            self.record_queue.put(indata.copy())
+
         while True:
+            self.vosk_queue = queue.Queue()
+            self.record_queue = queue.Queue()
             with sf.SoundFile('./client_command.wav', mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
                 with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
-                                        channels=1, callback=self.input_stream_callback):
+                                        channels=1, callback=input_stream_callback):
 
                     #print('Listening...')
 
