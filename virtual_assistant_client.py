@@ -232,7 +232,7 @@ class VirtualAssistantClient(threading.Thread):
             self.shutdown()
 
     def process_understanding_and_say(self, understanding):
-        self.stop_waiting()
+        #self.stop_waiting()
         response = understanding['response']
         intent = understanding['intent']
         conf = understanding['conf']

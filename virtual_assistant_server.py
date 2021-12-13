@@ -19,7 +19,7 @@ vosk_model = Model('vosk_big')
 
 app = FastAPI()
 
-VA = VirtualAssistant(name='jarvis', address='sir', debug=False)
+VA = VirtualAssistant(name='david', address='sir', debug=False)
 
 host = '10.0.0.120'
 port = 8000
@@ -129,8 +129,10 @@ async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
                     headers={'X-Error': 'There goes my error'})
 
         command = clean_text(command)
-        print(command)
+        print('Command: ',command)
         response, intent, conf = VA.understand(command)
+        print('Intent: ',intent,' - conf: ',conf)
+        print('Response: ',response)
         tts.save_to_file(response, 'server_response.wav')
         tts.runAndWait()
         return {
