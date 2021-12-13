@@ -3,6 +3,7 @@ from fastapi import FastAPI, Response, File, UploadFile, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
+import soundfile as sf
 import uvicorn
 import pyttsx3
 from virtual_assistant import VirtualAssistant
@@ -96,9 +97,11 @@ async def understand_from_audio(audio_file: UploadFile = File(...)):
 
 @app.post('/understand_from_audio_and_synth')
 async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
+    
     file_data = audio_file.file.read()
     with open('server_command.wav', 'wb') as fd:
         fd.write(file_data)
+    
     wf = wave.open('server_command.wav', 'rb')
     rec = KaldiRecognizer(vosk_model, wf.getframerate())
     rec.SetWords(True)
@@ -108,10 +111,14 @@ async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
         if len(data) == 0:
             break
         if rec.AcceptWaveform(data):
-            print('Result ', rec.Result())
+            res = rec.Result()
+            print('Result ', res)
+            break
         else:
-            print('Partial ', rec.PartialResult())
-    res = rec.FinalResult()
+            _ = rec.PartialResult()
+            print(_)
+    if res is None:
+        res = rec.FinalResult()
     print('Final ', res)
     if res:
         command = json.loads(res)['text']

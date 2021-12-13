@@ -28,14 +28,6 @@ class VirtualAssistantClient(threading.Thread):
         self.DEBUG = debug
         self.RPI = rpi
 
-        self.log(f'Debug Mode: {self.DEBUG}')
-        self.log(f'Use Voice Input: {self.USEVOICE}')
-        self.log(f'Using GOOGLE: {self.GOOGLE}')
-        self.log(f'Synth Voice Output: {self.USEVOICE}')
-        self.log(f'RPI: {self.RPI}')
-        self.log(f'Samplerate: {self.SAMPLERATE}')
-        self.log(f'Blocksize: {self.BLOCKSIZE}')
-
         port = 8000
         if not hub_ip:
             host = self.scan_for_hub(port)
@@ -49,7 +41,6 @@ class VirtualAssistantClient(threading.Thread):
         self.NAME = name_and_address['name']
         self.ADDRESS = name_and_address['address']
 
-        self.recog = sr.Recognizer()
         devices = sr.Microphone.list_microphone_names()
         self.log(devices)
         if not mic_tag:
@@ -72,6 +63,14 @@ class VirtualAssistantClient(threading.Thread):
 
         self.vosk_queue = queue.Queue()
         self.record_queue = queue.Queue()
+        
+        self.log(f'Debug Mode: {self.DEBUG}')
+        self.log(f'Use Voice Input: {self.USEVOICE}')
+        self.log(f'Using GOOGLE: {self.GOOGLE}')
+        self.log(f'Synth Voice Output: {self.USEVOICE}')
+        self.log(f'RPI: {self.RPI}')
+        self.log(f'Samplerate: {self.SAMPLERATE}')
+        self.log(f'Blocksize: {self.BLOCKSIZE}')
 
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
 
@@ -79,8 +78,8 @@ class VirtualAssistantClient(threading.Thread):
         """This is called (from a separate thread) for each audio block."""
         if status:
             print(status, file=sys.stderr)
-        vosk_queue.put(bytes(indata))
-        record_queue.put(indata.copy())
+        self.vosk_queue.put(bytes(indata))
+        self.record_queue.put(indata.copy())
 
         
     def scan(self, ip):
@@ -170,31 +169,29 @@ class VirtualAssistantClient(threading.Thread):
         vosk_model = vosk.Model('vosk_small')
         rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
 
-        while running:
-            with sf.SoundFile(filename, mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
+        while True:
+            with sf.SoundFile('./client_command.wav', mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
                 with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
-                                        channels=1, callback=input_stream_callback):
-                    print('#' * 80)
-                    print('Press Ctrl+C to stop the recording')
-                    print('#' * 80)
+                                        channels=1, callback=self.input_stream_callback):
 
-                    rec = vosk.KaldiRecognizer(model, self.SAMPLERATE)
-                    while not hotword and running:
-                        data = vosk_queue.get()
-                        outFile.write(record_queue.get())
+                    #print('Listening...')
+
+                    rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
+                    while True:
+                        data = self.vosk_queue.get()
+                        outFile.write(self.record_queue.get())
                         if rec.AcceptWaveform(data):
                             text = json.loads(rec.Result())['text']
-                            print('Final ',text)
-                            if 'hello' in text:
-                                hotword = True
+                            self.log(text)
+                            if self.ENGAGED or self.NAME in text:
+                                break
                         else:
-                            print(rec.PartialResult())
-
-            else: 
-                self.understand_from_audio_and_synth(audio)
+                            _ = rec.PartialResult()
+            self.understand_from_audio_and_synth(open('client_command.wav', 'rb'))
+            
 
     def understand_from_audio_and_synth(self, audio):
-        files = {'audio_file': audio.get_wav_data()}
+        files = {'audio_file': audio}
         response = requests.post(
             f'{self.api_url}/understand_from_audio_and_synth',
             files=files
