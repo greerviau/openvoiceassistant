@@ -147,9 +147,9 @@ class VirtualAssistantClient(object):
         else:
             os.system('aplay client_response.wav')
 
-    def listen(self):
+    def listen(self, source):
         self.log('Listening...')
-        audio = self.recog.listen(self.mic)
+        audio = self.recog.listen(source)
         self.log('Done Listening')
         return audio
 
@@ -175,35 +175,37 @@ class VirtualAssistantClient(object):
                 
     def listen_with_google(self):
         text = ''
-        self.recog.adjust_for_ambient_noise(self.mic)
-        while True:
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
             while True:
-                audio = self.listen()
-                try:
-                    text = self.recog.recognize_google(audio)
-                    break
-                except Exception as e:
-                    print(e)
-                    pass
-            if text:
-                text = clean_text(text)
-                self.log(f'cleaned: {text}')
-                if self.NAME in text or self.ENGAGED:
-                    self.understand_from_text_and_synth(text)
+                while True:
+                    audio = self.listen(source)
+                    try:
+                        text = self.recog.recognize_google(audio)
+                        break
+                    except Exception as e:
+                        print(e)
+                        pass
+                if text:
+                    text = clean_text(text)
+                    self.log(f'cleaned: {text}')
+                    if self.NAME in text or self.ENGAGED:
+                        self.understand_from_text_and_synth(text)
         
     def listen_with_hotword(self):
-        self.recog.adjust_for_ambient_noise(self.mic)
-        rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
-        while True:
-            audio = self.listen()
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
+            rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
+            while True:
+                audio = self.listen(source)
 
-            self.save_audio(audio)
-            if not self.ENGAGED:
-                final = self.check_for_hotword()
-                if self.NAME in final:
-                    self.understand_from_audio_and_synth(audio)      
-            else: 
-                self.understand_from_audio_and_synth(audio)
+                self.save_audio(audio)
+                if not self.ENGAGED:
+                    final = self.check_for_hotword()
+                    if self.NAME in final:
+                        self.understand_from_audio_and_synth(audio)      
+                else: 
+                    self.understand_from_audio_and_synth(audio)
 
     def understand_from_audio_and_synth(self, audio):
         files = {'audio_file': audio.get_wav_data()}
