@@ -40,18 +40,7 @@ class VirtualAssistantClient(object):
 
         port = 8000
         if not hub_ip:
-            devices = self.scan('10.0.0.1/24')
-            self.log(devices)
-            self.log('Looking for VA HUB...')
-            for device in devices:
-                ip = device['ip']
-                self.log(f'\rTesting: {ip}', end='')
-                try:
-                    response = requests.get(f'http://{ip}:{port}/is_va_hub').json()
-                    host = ip
-                    break
-                except:
-                    pass
+            host = self.scan_for_hub(port)
         else:
             host = hub_ip
 
@@ -94,6 +83,19 @@ class VirtualAssistantClient(object):
             self.TIMER.start()
 
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
+
+    def scan_for_hub(self, port):
+        devices = self.scan('10.0.0.1/24')
+        self.log(devices)
+        self.log('Looking for VA HUB...')
+        for device in devices:
+            ip = device['ip']
+            self.log(f'\rTesting: {ip}', end='')
+            try:
+                response = requests.get(f'http://{ip}:{port}/is_va_hub').json()
+                return ip
+            except:
+                pass
 
     def log(self, log_text, end='\n'):
         if self.DEBUG:
@@ -144,60 +146,64 @@ class VirtualAssistantClient(object):
             play(audio)
         else:
             os.system('aplay client_response.wav')
+
+    def listen(self):
+        self.log('Listening...')
+        audio = self.recog.listen(self.mic)
+        self.log('Done Listening')
+        return audio
+
+    def save_audio(self, audio):
+        with open('client_command.wav', 'wb') as f:
+            f.write(audio.get_wav_data())
     
+    def check_for_hotword(self):
+        final = []
+        self.log('Checking for hotword...')
+        wave_reader = wave.open('client_command.wav', 'rb')
+        while True:
+            data = wave_reader.readframes(4000)
+            if len(data) == 0:
+                break
+            if rec.AcceptWaveform(data):
+                rec.Result()
+            else:
+                partial = json.loads(rec.PartialResult())['partial']
+                final = list(set().union(partial.split(), final))
+        self.log('Done checking')
+        return final
+                
     def listen_with_google(self):
         text = ''
-        with self.mic as source:
-            self.recog.adjust_for_ambient_noise(source)
+        self.recog.adjust_for_ambient_noise(self.mic)
+        while True:
             while True:
-                while True:
-                    self.log('Listening...')
-                    audio = self.recog.listen(source)
-                    self.log('Done Listening')
-                    try:
-                        text = self.recog.recognize_google(audio)
-                        #print(text)
-                        break
-                    except Exception as e:
-                        print(e)
-                        pass
-                if text:
-                    text = clean_text(text)
-                    self.log(f'cleaned: {text}')
-                    if self.NAME in text or self.ENGAGED:
-                        self.understand_from_text_and_synth(text)
+                audio = self.listen()
+                try:
+                    text = self.recog.recognize_google(audio)
+                    break
+                except Exception as e:
+                    print(e)
+                    pass
+            if text:
+                text = clean_text(text)
+                self.log(f'cleaned: {text}')
+                if self.NAME in text or self.ENGAGED:
+                    self.understand_from_text_and_synth(text)
         
     def listen_with_hotword(self):
-        with self.mic as source:
-            self.recog.adjust_for_ambient_noise(source)
-            rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
-            while True:
-                self.log('Listening...')
-                audio = self.recog.listen(source)
-                self.log('Done Listening')
-                with open('client_command.wav', 'wb') as f:
-                    f.write(audio.get_wav_data())
-                wave_reader = wave.open('client_command.wav', 'rb')
-                
-                if not self.ENGAGED:
-                    final = []
-                    self.log('Checking for hotword...')
-                    while True:
-                        data = wave_reader.readframes(4000)
-                        if len(data) == 0:
-                            break
-                        if rec.AcceptWaveform(data):
-                            rec.Result()
-                        else:
-                            partial = json.loads(rec.PartialResult())['partial']
-                            final = list(set().union(partial.split(), final))
+        self.recog.adjust_for_ambient_noise(self.mic)
+        rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
+        while True:
+            audio = self.listen()
 
-                    self.log('Done checking')
-
-                    if self.NAME in final:
-                        self.understand_from_audio_and_synth(audio)      
-                else: 
-                    self.understand_from_audio_and_synth(audio)
+            self.save_audio(audio)
+            if not self.ENGAGED:
+                final = self.check_for_hotword()
+                if self.NAME in final:
+                    self.understand_from_audio_and_synth(audio)      
+            else: 
+                self.understand_from_audio_and_synth(audio)
 
     def understand_from_audio_and_synth(self, audio):
         files = {'audio_file': audio.get_wav_data()}
@@ -273,7 +279,6 @@ class VirtualAssistantClient(object):
             else:
                 while True:
                     text = input('You: ')
-                    #understanding = requests.get(f'{self.api_url}/understand/{text}').json()
                     self.understand_from_text_and_synth(text)
 
         except Exception as ex:

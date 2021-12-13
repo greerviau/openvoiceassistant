@@ -5,7 +5,6 @@ import sounddevice as sd
 import vosk
 import sys
 import json
-import webrtcvad
 import numpy as np
 import speech_recognition as sr 
 import requests
@@ -58,8 +57,6 @@ if args.samplerate is None:
 q = queue.Queue()
 block_size = 8000
 hotword = 'david'
-
-#vad = webrtcvad.Vad()
 
 recog = sr.Recognizer()
 print(sr.Microphone.list_microphone_names())
