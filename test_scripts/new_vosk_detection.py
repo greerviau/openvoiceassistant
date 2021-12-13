@@ -9,6 +9,15 @@ import threading
 import time
 import json
 
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument(
+    '-l', '--list-devices', action='store_true',
+    help='show list of audio devices and exit')
+args, remaining = parser.parse_known_args()
+if args.list_devices:
+    print(sd.query_devices())
+    parser.exit(0)
+
 vosk_queue= queue.Queue()
 record_queue = queue.Queue()
 
@@ -36,15 +45,6 @@ def callback(indata, frames, time, status):
         print(status, file=sys.stderr)
     vosk_queue.put(bytes(indata))
     record_queue.put(indata.copy())
-
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument(
-    '-l', '--list-devices', action='store_true',
-    help='show list of audio devices and exit')
-args, remaining = parser.parse_known_args()
-if args.list_devices:
-    print(sd.query_devices())
-    parser.exit(0)
 
 model = vosk.Model(model)
 
