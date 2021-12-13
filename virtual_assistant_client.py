@@ -61,7 +61,6 @@ class VirtualAssistantClient(threading.Thread):
         if self.USEVOICE:
             self.TIMER.start()
 
-        self.vosk_queue = queue.Queue()
         self.record_queue = queue.Queue()
         
         self.log(f'Debug Mode: {self.DEBUG}')
@@ -165,7 +164,6 @@ class VirtualAssistantClient(threading.Thread):
             """This is called (from a separate thread) for each audio block."""
             if status:
                 print(status, file=sys.stderr)
-            self.vosk_queue.put(bytes(indata))
             self.record_queue.put(indata.copy())
 
         while True:
@@ -178,15 +176,25 @@ class VirtualAssistantClient(threading.Thread):
                     #print('Listening...')
 
                     rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
+                    audio_cache = []
                     while True:
-                        data = self.vosk_queue.get()
-                        outFile.write(self.record_queue.get())
-                        if rec.AcceptWaveform(data):
+                        data = self.record_queue.get()
+                        if rec.AcceptWaveform(bytes(data)):
+                            outFile.write(data)
                             text = json.loads(rec.Result())['text']
                             self.log(text)
                             break
                         else:
-                            _ = rec.PartialResult()
+                            partial = json.loads(rec.PartialResult())['partial']
+                            if partial:
+                                for i in range(len(audio_cache)):
+                                    outFile.write(audio_cache.pop(0))
+                                audio_cache = []
+                                outFile.write(data)
+                            else:
+                                audio_cache.append(data)
+                                if len(audio_cache) > 5:
+                                    audio_cache.pop(0)
             self.understand_from_audio_and_synth(open('client_command.wav', 'rb'))
             
 

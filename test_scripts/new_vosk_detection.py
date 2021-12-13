@@ -18,8 +18,7 @@ if args.list_devices:
     print(sd.query_devices())
     parser.exit(0)
 
-vosk_queue= queue.Queue()
-record_queue = queue.Queue()
+queue= queue.Queue()
 
 running = False
 hotword = False
@@ -43,8 +42,7 @@ def callback(indata, frames, time, status):
     """This is called (from a separate thread) for each audio block."""
     if status:
         print(status, file=sys.stderr)
-    vosk_queue.put(bytes(indata))
-    record_queue.put(indata.copy())
+    queue.put(indata.copy())
 
 model = vosk.Model(model)
 
@@ -62,15 +60,26 @@ def rec():
 
                 rec = vosk.KaldiRecognizer(model, samplerate)
                 while not hotword and running:
-                    data = vosk_queue.get()
-                    outFile.write(record_queue.get())
-                    if rec.AcceptWaveform(data):
+                    data = queue.get()
+                    if rec.AcceptWaveform(bytes(data)):
+                        outFile.write(data)
                         text = json.loads(rec.Result())['text']
-                        print('Final ',text)
+                        print('\nFinal ',text)
                         if 'david' in text:
                             hotword = True
                     else:
-                        print(rec.PartialResult())
+                        partial = json.loads(rec.PartialResult())['partial']
+                        print(f'\r{partial}', end='')
+                        if partial:
+                            #print('Writing to file')
+                            for i in range(len(audio_cache)):
+                                outFile.write(audio_cache.pop(0))
+                            audio_cache = []
+                            outFile.write(data)
+                        else:
+                            audio_cache.append(data)
+                            if len(audio_cache) > 5:
+                                audio_cache.pop(0)
 
                 print('Process recording')
                 hotword = False
