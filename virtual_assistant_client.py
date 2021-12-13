@@ -169,7 +169,6 @@ class VirtualAssistantClient(threading.Thread):
         while True:
             self.vosk_queue = queue.Queue()
             self.record_queue = queue.Queue()
-            hotword = False
             with sf.SoundFile('./client_command.wav', mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
                 with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
                                         channels=1, callback=input_stream_callback):
@@ -185,9 +184,7 @@ class VirtualAssistantClient(threading.Thread):
                             text = json.loads(rec.Result())['text']
                             self.log(text)
                             if self.NAME in text:
-                                hotword = True
-                            else:
-                                hotword = False
+                                self.ENGAGED = True
                             break
                         else:
                             partial = json.loads(rec.PartialResult())['partial']
@@ -200,7 +197,7 @@ class VirtualAssistantClient(threading.Thread):
                                 audio_cache.append(data)
                                 if len(audio_cache) > 5:
                                     audio_cache.pop(0)
-            if hotword:
+            if self.ENGAGED:
                 self.understand_from_audio_and_synth(open('client_command.wav', 'rb'))
             
 
