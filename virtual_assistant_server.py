@@ -112,11 +112,11 @@ async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
             break
         if rec.AcceptWaveform(data):
             res = rec.Result()
-            print('Result ', res)
+            #print('Result ', res)
             break
         else:
             _ = rec.PartialResult()
-            print(_)
+            #print(_)
     if res is None:
         res = rec.FinalResult()
     print('Final ', res)

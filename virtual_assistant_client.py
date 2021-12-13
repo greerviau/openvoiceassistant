@@ -183,8 +183,7 @@ class VirtualAssistantClient(threading.Thread):
                         if rec.AcceptWaveform(data):
                             text = json.loads(rec.Result())['text']
                             self.log(text)
-                            if self.ENGAGED or self.NAME in text:
-                                break
+                            break
                         else:
                             _ = rec.PartialResult()
             self.understand_from_audio_and_synth(open('client_command.wav', 'rb'))
