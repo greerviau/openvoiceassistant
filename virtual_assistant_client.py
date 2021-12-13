@@ -84,6 +84,22 @@ class VirtualAssistantClient(object):
 
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
 
+        
+    def scan(self, ip):
+        arp_req_frame = scapy.ARP(pdst = ip)
+
+        broadcast_ether_frame = scapy.Ether(dst = "ff:ff:ff:ff:ff:ff")
+        
+        broadcast_ether_arp_req_frame = broadcast_ether_frame / arp_req_frame
+
+        answered_list = scapy.srp(broadcast_ether_arp_req_frame, timeout = 1, verbose = False)[0]
+        result = []
+        for i in range(0,len(answered_list)):
+            client_dict = {"ip" : answered_list[i][1].psrc, "mac" : answered_list[i][1].hwsrc}
+            result.append(client_dict)
+
+        return result
+
     def scan_for_hub(self, port):
         devices = self.scan('10.0.0.1/24')
         self.log(devices)
@@ -100,22 +116,6 @@ class VirtualAssistantClient(object):
     def log(self, log_text, end='\n'):
         if self.DEBUG:
             print(log_text, end=end)
-
-    
-    def scan(self, ip):
-        arp_req_frame = scapy.ARP(pdst = ip)
-
-        broadcast_ether_frame = scapy.Ether(dst = "ff:ff:ff:ff:ff:ff")
-        
-        broadcast_ether_arp_req_frame = broadcast_ether_frame / arp_req_frame
-
-        answered_list = scapy.srp(broadcast_ether_arp_req_frame, timeout = 1, verbose = False)[0]
-        result = []
-        for i in range(0,len(answered_list)):
-            client_dict = {"ip" : answered_list[i][1].psrc, "mac" : answered_list[i][1].hwsrc}
-            result.append(client_dict)
-
-        return result
     
     def shutdown(self):
         print('Shutdown...')
@@ -299,4 +299,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     assistant = VirtualAssistantClient(*vars(args).values())
-    assistant.run()    
+    assistant.run()

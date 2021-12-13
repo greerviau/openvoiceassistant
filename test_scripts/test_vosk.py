@@ -2,6 +2,7 @@ import argparse
 import os
 import queue
 import sounddevice as sd
+import soundfile as sf
 import vosk
 import sys
 
@@ -19,6 +20,7 @@ def callback(indata, frames, time, status):
     if status:
         print(status, file=sys.stderr)
     q.put(bytes(indata))
+    q1.put(indata)
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument(
@@ -59,26 +61,20 @@ try:
 
     model = vosk.Model(args.model)
 
-    if args.filename:
-        dump_fn = open(args.filename, "wb")
-    else:
-        dump_fn = None
-
+    
     with sd.RawInputStream(samplerate=args.samplerate, blocksize = 8000, device=args.device, dtype='int16',
                             channels=1, callback=callback):
-            print('#' * 80)
-            print('Press Ctrl+C to stop the recording')
-            print('#' * 80)
+        print('#' * 80)
+        print('Press Ctrl+C to stop the recording')
+        print('#' * 80)
 
-            rec = vosk.KaldiRecognizer(model, args.samplerate)
-            while True:
-                data = q.get()
-                if rec.AcceptWaveform(data):
-                    print(rec.Result())
-                else:
-                    print(rec.PartialResult())
-                if dump_fn is not None:
-                    dump_fn.write(data)
+        rec = vosk.KaldiRecognizer(model, args.samplerate)
+        while True:
+            data = q.get()
+            if rec.AcceptWaveform(data):
+                print(rec.Result())
+            else:
+                print(rec.PartialResult())
 
 except KeyboardInterrupt:
     print('\nDone')
