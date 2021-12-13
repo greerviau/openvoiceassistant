@@ -67,7 +67,7 @@ def rec():
                     if rec.AcceptWaveform(data):
                         text = json.loads(rec.Result())['text']
                         print('Final ',text)
-                        if 'hello' in text:
+                        if 'david' in text:
                             hotword = True
                     else:
                         print(rec.PartialResult())

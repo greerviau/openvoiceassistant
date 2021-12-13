@@ -1,9 +1,9 @@
 import speech_recognition as sr 
 import sounddevice as sd
-import soundfile as sf
+from ibm_watson import TextToSpeechV1
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from pydub import AudioSegment
 from pydub.playback import play
-import threading
 from threading import Timer
 import vosk
 import sys
@@ -17,11 +17,12 @@ import argparse
 import wave
 import base64
 
-class VirtualAssistantClient(threading.Thread):
+class VirtualAssistantClient(object):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, debug, rpi):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, watson, mic_tag, blocksize, samplerate, debug, rpi):
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
+        self.WATSON = watson
         self.GOOGLE = google
         self.BLOCKSIZE = blocksize
         self.SAMPLERATE = samplerate
@@ -32,6 +33,7 @@ class VirtualAssistantClient(threading.Thread):
         self.log(f'Use Voice Input: {self.USEVOICE}')
         self.log(f'Using GOOGLE: {self.GOOGLE}')
         self.log(f'Synth Voice Output: {self.USEVOICE}')
+        self.log(f'Using WATSON: {self.WATSON}')
         self.log(f'RPI: {self.RPI}')
         self.log(f'Samplerate: {self.SAMPLERATE}')
         self.log(f'Blocksize: {self.BLOCKSIZE}')
@@ -49,6 +51,9 @@ class VirtualAssistantClient(threading.Thread):
         self.NAME = name_and_address['name']
         self.ADDRESS = name_and_address['address']
 
+        self.vosk_model = vosk.Model('vosk_small')
+        self.vosk_que = queue.Queue()
+
         self.recog = sr.Recognizer()
         devices = sr.Microphone.list_microphone_names()
         self.log(devices)
@@ -57,12 +62,19 @@ class VirtualAssistantClient(threading.Thread):
         output = [idx for idx, element in enumerate(devices) if mic_tag in element.lower()]
         self.device = output[0]
         self.log(f'Device {devices[self.device]} index {self.device}')
-        #self.mic = sr.Microphone(device_index = self.device)
+        self.mic = sr.Microphone(device_index = self.device)
 
         device_info = sd.query_devices(self.device, 'input')
         if self.SAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
 
+        if self.WATSON:
+            authenticator = IAMAuthenticator(os.environ['IBM_API_KEY'])
+            self.text_to_speech = TextToSpeechV1(
+                authenticator=authenticator
+            )
+            self.text_to_speech.set_service_url('https://api.us-south.text-to-speech.watson.cloud.ibm.com/instances/558fb7c3-30e9-4fe7-8861-46cd1031caf9')
+    
         self.ENGAGED = True
         self.HOT = False
         self.TIMEOUT = 15.0
@@ -70,17 +82,7 @@ class VirtualAssistantClient(threading.Thread):
         if self.USEVOICE:
             self.TIMER.start()
 
-        self.vosk_queue = queue.Queue()
-        self.record_queue = queue.Queue()
-
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
-
-    def input_stream_callback(self, indata, frames, time, status):
-        """This is called (from a separate thread) for each audio block."""
-        if status:
-            print(status, file=sys.stderr)
-        vosk_queue.put(bytes(indata))
-        record_queue.put(indata.copy())
 
         
     def scan(self, ip):
@@ -124,9 +126,17 @@ class VirtualAssistantClient(threading.Thread):
         print(f'{self.NAME}: {text}')
         if self.SYNTHVOICE:
             with open('./client_response.wav', 'wb') as audio_file:
-                audio_file.write(
-                    requests.get(f'{self.api_url}/synth_voice/{text}').content
-                )
+                if self.WATSON:
+                    audio_file.write(
+                        self.text_to_speech.synthesize(
+                            text,
+                            voice='en-GB_JamesV3Voice',
+                            accept='audio/wav'        
+                        ).get_result().content)
+                else:
+                    audio_file.write(
+                        requests.get(f'{self.api_url}/synth_voice/{text}').content
+                    )
 
             self.say()
 
@@ -167,31 +177,32 @@ class VirtualAssistantClient(threading.Thread):
                         self.understand_from_text_and_synth(text)
         
     def listen_with_hotword(self):
-        vosk_model = vosk.Model('vosk_small')
-        rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
+        with self.mic as source:
+            self.recog.adjust_for_ambient_noise(source)
+            rec = vosk.KaldiRecognizer(self.vosk_model, self.SAMPLERATE, f'["{self.NAME}", "[unk]"]')
 
-        while running:
-            with sf.SoundFile(filename, mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
-                with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
-                                        channels=1, callback=input_stream_callback):
-                    print('#' * 80)
-                    print('Press Ctrl+C to stop the recording')
-                    print('#' * 80)
+            while True:
+                audio = self.listen(source)
 
-                    rec = vosk.KaldiRecognizer(model, self.SAMPLERATE)
-                    while not hotword and running:
-                        data = vosk_queue.get()
-                        outFile.write(record_queue.get())
+                self.save_audio(audio)
+                if not self.ENGAGED:
+                    final = []
+                    self.log('Checking for hotword...')
+                    wave_reader = wave.open('client_command.wav', 'rb')
+                    while True:
+                        data = wave_reader.readframes(4000)
+                        if len(data) == 0:
+                            break
                         if rec.AcceptWaveform(data):
-                            text = json.loads(rec.Result())['text']
-                            print('Final ',text)
-                            if 'hello' in text:
-                                hotword = True
+                            rec.Result()
                         else:
-                            print(rec.PartialResult())
-
-            else: 
-                self.understand_from_audio_and_synth(audio)
+                            partial = json.loads(rec.PartialResult())['partial']
+                            final = list(set().union(partial.split(), final))
+                    self.log('Done checking')
+                    if self.NAME in final:
+                        self.understand_from_audio_and_synth(audio)      
+                else: 
+                    self.understand_from_audio_and_synth(audio)
 
     def understand_from_audio_and_synth(self, audio):
         files = {'audio_file': audio.get_wav_data()}
@@ -279,6 +290,7 @@ if __name__ == '__main__':
     parser.add_argument('--useVoice', help='Use voice as input', action='store_true')
     parser.add_argument('--synthVoice', help='Synthesize voice as output', action='store_true')
     parser.add_argument('--google', help='Use google speech recognition', action='store_true')
+    parser.add_argument('--watson', help='Use watson speech synthesis', action='store_true')
     parser.add_argument('--mic', type=str, help='Microphone tag', default='')
     parser.add_argument('--blocksize', type=int, help='Blocksize for voice capture', default=8000)
     parser.add_argument('--samplerate', type=int, help='Samplerate for microphone', default=None)
