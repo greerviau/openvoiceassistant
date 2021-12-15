@@ -1,8 +1,9 @@
-from typing import Optional
-from fastapi import FastAPI, Response, File, UploadFile, HTTPException
+from typing import Optional, List
+from fastapi import FastAPI, Response, File, UploadFile, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 import soundfile as sf
 import uvicorn
 import pyttsx3
@@ -26,6 +27,10 @@ port = 8000
 tts = pyttsx3.init()
 tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enGB_GeorgeM')
 tts.setProperty('rate',175)
+
+class Data(BaseModel):
+    audio_file: List[str]
+    samplerate: int
 
 @app.get('/is_va_hub')
 def is_va_hub():
@@ -96,20 +101,25 @@ async def understand_from_audio(audio_file: UploadFile = File(...)):
     }
 
 @app.post('/understand_from_audio_and_synth')
-async def understand_from_audio_and_synth(audio_file: UploadFile = File(...)):
-    
+async def understand_from_audio_and_synth(data: Data):
+    '''
     file_data = audio_file.file.read()
     with open('server_command.wav', 'wb') as fd:
         fd.write(file_data)
     
     wf = wave.open('server_command.wav', 'rb')
-    rec = KaldiRecognizer(vosk_model, wf.getframerate())
+    '''
+    audio_file = data.audio_file
+    samplerate = data.samplerate
+    #print(audio_file)
+    #print(samplerate)
+    rec = KaldiRecognizer(vosk_model, samplerate)
     rec.SetWords(True)
     res = None
     while True:
-        data = wf.readframes(4000)
-        if len(data) == 0:
+        if len(audio_file) == 0:
             break
+        data = bytes(base64.b64decode(audio_file.pop(0)))
         if rec.AcceptWaveform(data):
             res = rec.Result()
             #print('Result ', res)

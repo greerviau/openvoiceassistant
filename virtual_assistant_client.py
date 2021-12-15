@@ -169,43 +169,44 @@ class VirtualAssistantClient(threading.Thread):
         while True:
             self.vosk_queue = queue.Queue()
             self.record_queue = queue.Queue()
-            with sf.SoundFile('./client_command.wav', mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
-                with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
-                                        channels=1, callback=input_stream_callback):
+            #with sf.SoundFile('./client_command.wav', mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
+            outFile = []
+            with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
+                                    channels=1, callback=input_stream_callback):
 
-                    #print('Listening...')
+                #print('Listening...')
 
-                    rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
-                    audio_cache = []
-                    while True:
-                        data = self.record_queue.get()
-                        if rec.AcceptWaveform(bytes(data)):
-                            outFile.write(data)
-                            text = json.loads(rec.Result())['text']
-                            self.log(text)
-                            if self.NAME in text:
-                                self.ENGAGED = True
-                            break
+                rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
+                audio_cache = []
+                while True:
+                    data = bytes(self.record_queue.get())
+                    if rec.AcceptWaveform(data):
+                        outFile.append(base64.b64encode(data))
+                        text = json.loads(rec.Result())['text']
+                        self.log(text)
+                        if self.NAME in text:
+                            self.ENGAGED = True
+                        break
+                    else:
+                        partial = json.loads(rec.PartialResult())['partial']
+                        if partial:
+                            for i in range(len(audio_cache)):
+                                outFile.append(base64.b64encode(audio_cache.pop(0)))
+                            audio_cache = []
+                            outFile.append(base64.b64encode(data))
                         else:
-                            partial = json.loads(rec.PartialResult())['partial']
-                            if partial:
-                                for i in range(len(audio_cache)):
-                                    outFile.write(audio_cache.pop(0))
-                                audio_cache = []
-                                outFile.write(data)
-                            else:
-                                audio_cache.append(data)
-                                if len(audio_cache) > 5:
-                                    audio_cache.pop(0)
-            if self.ENGAGED:
-                self.understand_from_audio_and_synth(open('client_command.wav', 'rb'))
+                            audio_cache.append(data)
+                            if len(audio_cache) > 5:
+                                audio_cache.pop(0)
+                if self.ENGAGED:
+                    self.understand_from_audio_and_synth(outFile)
             
 
     def understand_from_audio_and_synth(self, audio):
-        files = {'audio_file': audio}
+        files = {'samplerate': self.SAMPLERATE, 'audio_file': audio}
         response = requests.post(
             f'{self.api_url}/understand_from_audio_and_synth',
-            files=files
+            json=files
         )
         if response.status_code == 200:
             understanding = response.json()
@@ -266,20 +267,15 @@ class VirtualAssistantClient(threading.Thread):
         self.TIMER.cancel()
 
     def run(self):
-        try:
-            if self.USEVOICE:
-                if self.GOOGLE:
-                    self.listen_with_google()
-                else:
-                    self.listen_with_hotword()
+        if self.USEVOICE:
+            if self.GOOGLE:
+                self.listen_with_google()
             else:
-                while True:
-                    text = input('You: ')
-                    self.understand_from_text_and_synth(text)
-
-        except Exception as ex:
-                self.log(ex)
-                self.shutdown()
+                self.listen_with_hotword()
+        else:
+            while True:
+                text = input('You: ')
+                self.understand_from_text_and_synth(text)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
