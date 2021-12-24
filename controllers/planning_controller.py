@@ -16,16 +16,16 @@ class PlanningController(object):
     def check_calendar(self, text):
         date, date_str = parse_date(text)
         if date is None:
-            return f'I didnt catch the date {self.ADDRESS}'
+            return Response(f'I didnt catch the date {self.ADDRESS}')
         #print(date, date_str)
         events = self.googleControl.get_events(date)
         #print(events)
         if not events:
-            return f'You have nothing planned for {date_str}'
+            return Response(f'You have nothing planned for {date_str}')
         
         if 'how many' in text:
             ext = 's' if len(events) > 1 else ''
-            return f'You have {len(events)} event{ext} planned for {date_str}'
+            return Response(f'You have {len(events)} event{ext} planned for {date_str}')
 
         response = date_str
         for i, event in enumerate(events):
@@ -50,7 +50,7 @@ class PlanningController(object):
 
             event_summary = event['summary'].lower()
             response += f'{event_summary} {event_time}'
-        return response
+        return Response(response)
 
     def set_reminder(self, text):
         #todo
@@ -98,18 +98,18 @@ class PlanningController(object):
         
         times = sorted(times, key = lambda x: x[0]) 
         if len(times) == 0:
-            return f'I didnt catch the time that you wanted me to set {r_type} for'
+            return Response(f'I didnt catch the time that you wanted me to set {r_type} for')
         elif len(times) == 1:
             if date:
-                return f'Setting {r_type}{subject_string}{final_date_string} at {times[0][2]}'
+                return Response(f'Setting {r_type}{subject_string}{final_date_string} at {times[0][2]}')
             else:
-                return f'Setting {r_type}{subject_string}at {times[0][2]}'
+                return Response(f'Setting {r_type}{subject_string}at {times[0][2]}')
         else:
             r_type = 'a reminder'
             subject_string = f' that you have {subject} '
             if date:
-                return f'Setting {r_type}{subject_string}{final_date_string} from {times[0][2]} to {times[1][2]}'
+                return Response(f'Setting {r_type}{subject_string}{final_date_string} from {times[0][2]} to {times[1][2]}')
             else:
-                return f'Setting {r_type}{subject_string}from {times[0][2]} to {times[1][2]}'
+                return Response(f'Setting {r_type}{subject_string}from {times[0][2]} to {times[1][2]}')
         
-        return f'I didnt understand that {self.ADDRESS}'
+        return Response(f'I didnt understand that {self.ADDRESS}')

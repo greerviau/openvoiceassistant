@@ -13,13 +13,13 @@ import queue
 import requests
 from utils import clean_text
 import scapy.all as scapy
-import argparse
 import wave
 import base64
+#from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, debug, rpi):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, debug, rpi):
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.GOOGLE = google
@@ -48,7 +48,6 @@ class VirtualAssistantClient(threading.Thread):
         output = [idx for idx, element in enumerate(devices) if mic_tag in element.lower()]
         self.device = output[0]
         self.log(f'Device {devices[self.device]} index {self.device}')
-        #self.mic = sr.Microphone(device_index = self.device)
 
         device_info = sd.query_devices(self.device, 'input')
         if self.SAMPLERATE is None:
@@ -56,8 +55,8 @@ class VirtualAssistantClient(threading.Thread):
 
         self.ENGAGED = True
         self.HOT = False
-        self.TIMEOUT = 15.0
-        self.TIMER = Timer(interval=30.0, function=self.disengage)
+        self.TIMEOUT = activityTimeout
+        self.TIMER = Timer(interval=activityTimeout*2, function=self.disengage)
         if self.USEVOICE:
             self.TIMER.start()
 
@@ -65,13 +64,22 @@ class VirtualAssistantClient(threading.Thread):
         
         self.log(f'Debug Mode: {self.DEBUG}')
         self.log(f'Use Voice Input: {self.USEVOICE}')
-        self.log(f'Using GOOGLE: {self.GOOGLE}')
+        self.log('Online Speech Recognition' if self.GOOGLE else 'Offline Speech Recognition')
         self.log(f'Synth Voice Output: {self.USEVOICE}')
         self.log(f'RPI: {self.RPI}')
         self.log(f'Samplerate: {self.SAMPLERATE}')
         self.log(f'Blocksize: {self.BLOCKSIZE}')
+        self.log(f'Activity Timeout: {self.TIMEOUT}')
 
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
+
+        self.callback = ''
+        '''
+        self.skills = {
+            'set_volume':volume_control.set_volume,
+            'scale_volume':volume_control.scale_volume
+        }
+        '''
         
     def scan(self, ip):
         arp_req_frame = scapy.ARP(pdst = ip)
@@ -203,7 +211,7 @@ class VirtualAssistantClient(threading.Thread):
             
 
     def understand_from_audio_and_synth(self, audio):
-        files = {'samplerate': self.SAMPLERATE, 'audio_file': audio}
+        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio}
         response = requests.post(
             f'{self.api_url}/understand_from_audio_and_synth',
             json=files
@@ -234,9 +242,12 @@ class VirtualAssistantClient(threading.Thread):
 
     def process_understanding_and_say(self, understanding):
         #self.stop_waiting()
-        response = understanding['response']
+        packet = understanding['packet']
+        response = packet['response']
         intent = understanding['intent']
         conf = understanding['conf']
+        action = packet['action']
+        self.callback = packet['callback']
         synth = base64.b64decode(understanding['synth'])
         self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
         if response:
@@ -246,9 +257,16 @@ class VirtualAssistantClient(threading.Thread):
                     audio_file.write(synth)
             self.say()
             self.wait_for_response()
+            if action:
+                self.do_action(action)
         
         if intent == 'shutdown':
             self.shutdown()
+
+    def do_action(self, action):
+        method = action['method']
+        data = action['data']
+        self.skills[method](data)
     
     def disengage(self):
         self.log('Disengaged')
@@ -278,17 +296,8 @@ class VirtualAssistantClient(threading.Thread):
                 self.understand_from_text_and_synth(text)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--hub', type=str, help='VA hub ip address', default='')
-    parser.add_argument('--useVoice', help='Use voice as input', action='store_true')
-    parser.add_argument('--synthVoice', help='Synthesize voice as output', action='store_true')
-    parser.add_argument('--google', help='Use google speech recognition', action='store_true')
-    parser.add_argument('--mic', type=str, help='Microphone tag', default='')
-    parser.add_argument('--blocksize', type=int, help='Blocksize for voice capture', default=8000)
-    parser.add_argument('--samplerate', type=int, help='Samplerate for microphone', default=None)
-    parser.add_argument('--debug', help='Synthesize voice as output', action='store_true')
-    parser.add_argument('--rpi', help='Running on raspberry pi', action='store_true')
 
-    args = parser.parse_args()
-    assistant = VirtualAssistantClient(*vars(args).values())
+    config = json.load(open('client_config.json', 'r'))
+
+    assistant = VirtualAssistantClient(*config.values())
     assistant.run()

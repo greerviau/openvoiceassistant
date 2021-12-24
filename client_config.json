@@ -1,0 +1,12 @@
+{
+    "hub": "10.0.0.120",
+    "useVoice": true,
+    "synthVoice": true,
+    "google": false,
+    "mic":"c922",
+    "blocksize": 8000,
+    "samplerate": null,
+    "activityTimeout": 15.0,
+    "debug": true,
+    "rpi": false
+}

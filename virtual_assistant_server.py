@@ -30,6 +30,7 @@ tts.setProperty('rate',175)
 
 class Data(BaseModel):
     audio_file: List[str]
+    callback: str
     samplerate: int
 
 @app.get('/is_va_hub')
@@ -111,6 +112,7 @@ async def understand_from_audio_and_synth(data: Data):
     '''
     audio_file = data.audio_file
     samplerate = data.samplerate
+    callback = data.callback
     #print(audio_file)
     #print(samplerate)
     rec = KaldiRecognizer(vosk_model, samplerate)
@@ -142,12 +144,12 @@ async def understand_from_audio_and_synth(data: Data):
         print('Command: ',command)
         response, intent, conf = VA.understand(command)
         print('Intent: ',intent,' - conf: ',conf)
-        print('Response: ',response)
-        tts.save_to_file(response, 'server_response.wav')
+        print('Response: ',response.to_string())
+        tts.save_to_file(response.response, 'server_response.wav')
         tts.runAndWait()
         return {
             'command': command,
-            'response':response,
+            'packet':response,
             'intent':intent,
             'conf':conf,
             'synth':base64.b64encode(open('server_response.wav', 'rb').read())

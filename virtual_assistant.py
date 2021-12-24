@@ -39,7 +39,7 @@ class VirtualAssistant(object):
             command = ' '.join(words)
         
             if command:
-                response = ''
+                response = None
                 intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
                 
                 self.log(f'intent: {intent} | conf: {conf}')
@@ -66,6 +66,9 @@ class VirtualAssistant(object):
 
                     if intent == 'lookup':
                         response = self.generalControl.search(command)
+                    
+                    if intent == 'volume':
+                        response = self.generalControl.volume(command)
 
                     if intent == 'reminder':
                         #todo

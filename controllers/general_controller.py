@@ -7,6 +7,7 @@ import geocoder
 import os
 from nlp_utils import extract_noun_chunks, extract_subject
 from utils import get_after
+from response_model import *
 
 class GeneralController(object):
     def __init__(self, address, location, debug=False):
@@ -28,22 +29,22 @@ class GeneralController(object):
             try:
                 return wikipedia.summary(subject, 1)
             except:
-                return f'I had trouble finding information on {subject}'
+                return Response(f'I had trouble finding information on {subject}')
         else:
-            return f'I didnt catch that {self.ADDRESS}, what did you want to know?'
+            return Response(f'I didnt catch that {self.ADDRESS}, what did you want to know?')
 
     def get_time(self, command):
         time = datetime.datetime.now().strftime('%I:%M %p')
-        return f'It is {time}'
+        return Response(f'It is {time}')
 
     def play(self, command):
         components = extract_subject(command)
         song = ' by '.join(components)
         if song:
             pywhatkit.playonyt(song)
-            return f'Playing {song}'
+            return Response(f'Playing {song}')
         else:
-            return f'I didnt catch that {self.ADDRESS}, did you want me to play something?'
+            return Response(f'I didnt catch that {self.ADDRESS}, did you want me to play something?')
 
     def get_weather(self, command):
         city = None
@@ -77,7 +78,7 @@ class GeneralController(object):
         command_words = command.split()
 
         if 'weather' in command_words:
-            return f'{response}{temp_str} and {description}'
+            return Response(f'{response}{temp_str} and {description}')
         
         '''
         better way to do this
@@ -119,7 +120,15 @@ class GeneralController(object):
             else:
                 response += f', and {description}'
 
-        return response
+        return Response(response)
+
+    def volume(self, text):
+        for word in text:
+            if word.isnumeric():
+                value = int(word)
+                response = f'Setting the volume to {value}'
+                action = Action('set_volume',value)
+                return Response(response, action)
 
     def answer_math(self, text):
         #todo

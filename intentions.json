@@ -235,7 +235,24 @@
                 "can you pencil me in for BIGBLANKBIG on BIGBLANKBIG at",
                 "can you pencil me in on BIGBLANKBIG for"
             ]
+        },
+        {
+            "tag":"volume",
+            "patterns":[
+                "can you turn down the volume",
+                "volume at BIGBLANKBIG percent",
+                "be quiet",
+                "mute",
+                "can you mute",
+                "can you be quiet",
+                "quiet down",
+                "silence",
+                "be silent",
+                "set the volume to BIGBLANKBIG percent",
+                "turn the volume down BIGBLANKBIG points",
+                "turn it down",
+                "turn it down a notch"
+            ]
         }
-        
     ]
 }
