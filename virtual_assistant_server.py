@@ -9,7 +9,7 @@ import uvicorn
 import pyttsx3
 from virtual_assistant import VirtualAssistant
 import wave
-from  vosk import Model, KaldiRecognizer, SetLogLevel
+from vosk import Model, KaldiRecognizer, SetLogLevel
 import json
 import wave
 from utils import clean_text
@@ -121,7 +121,7 @@ async def understand_from_audio_and_synth(data: Data):
     while True:
         if len(audio_file) == 0:
             break
-        data = bytes(base64.b64decode(audio_file.pop(0)))
+        data = bytes(base64.b64decode(audio_file.pop(0).encode('utf-8')))
         if rec.AcceptWaveform(data):
             res = rec.Result()
             #print('Result ', res)

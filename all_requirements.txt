@@ -13,8 +13,6 @@ scapy
 requests
 rake-nltk
 pywhatkit
-ibm-watson
-ibm-cloud-sdk-core
 Keras
 numpy
 openai
@@ -26,4 +24,5 @@ geocoder
 google-api-python-client
 pytz
 fastapi
-spacy
+soundfile
+pyaudio

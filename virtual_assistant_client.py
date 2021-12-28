@@ -189,7 +189,7 @@ class VirtualAssistantClient(threading.Thread):
                 while True:
                     data = bytes(self.record_queue.get())
                     if rec.AcceptWaveform(data):
-                        outFile.append(base64.b64encode(data))
+                        outFile.append(base64.b64encode(data).decode('utf-8'))
                         text = json.loads(rec.Result())['text']
                         self.log(text)
                         if self.NAME in text:
@@ -199,9 +199,9 @@ class VirtualAssistantClient(threading.Thread):
                         partial = json.loads(rec.PartialResult())['partial']
                         if partial:
                             for i in range(len(audio_cache)):
-                                outFile.append(base64.b64encode(audio_cache.pop(0)))
+                                outFile.append(base64.b64encode(audio_cache.pop(0)).decode('utf-8'))
                             audio_cache = []
-                            outFile.append(base64.b64encode(data))
+                            outFile.append(base64.b64encode(data).decode('utf-8'))
                         else:
                             audio_cache.append(data)
                             if len(audio_cache) > 5:
