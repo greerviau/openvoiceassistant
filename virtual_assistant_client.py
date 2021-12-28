@@ -19,7 +19,7 @@ from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, debug, rpi):
+    def __init__(self, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, speakerIndex, debug, rpi):
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.GOOGLE = google
@@ -41,6 +41,7 @@ class VirtualAssistantClient(threading.Thread):
         self.NAME = name_and_address['name']
         self.ADDRESS = name_and_address['address']
 
+        self.speaker = speakerIndex
         devices = sr.Microphone.list_microphone_names()
         self.log(devices)
         if not mic_tag:
@@ -268,7 +269,7 @@ class VirtualAssistantClient(threading.Thread):
         if self.RPI:
             method = action['method']
             data = action['data']
-            self.skills[method](data, self.device)
+            self.skills[method](data, self.speaker)
     
     def disengage(self):
         self.log('Disengaged')

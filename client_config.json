@@ -7,6 +7,7 @@
     "blocksize": 8000,
     "samplerate": null,
     "activityTimeout": 15.0,
+    "speakerIndex": 3,
     "debug": true,
     "rpi": false
 }
