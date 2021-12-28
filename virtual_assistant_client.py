@@ -267,7 +267,7 @@ class VirtualAssistantClient(threading.Thread):
         if self.RPI:
             method = action['method']
             data = action['data']
-            self.skills[method](data)
+            self.skills[method](data, self.device)
     
     def disengage(self):
         self.log('Disengaged')
