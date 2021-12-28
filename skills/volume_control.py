@@ -1,7 +1,7 @@
 from subprocess import call
 
 def set_volume(volume, device):
-    scale = 255.0 * (volume/100.0)
+    scale = int(255.0 * (volume/100.0))
     print(scale)
     call(["amixer", '-D', f'hw:{device}', 'sset', 'Playback', f'{scale}%'])
 
