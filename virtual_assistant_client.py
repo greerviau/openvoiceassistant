@@ -78,8 +78,7 @@ class VirtualAssistantClient(threading.Thread):
         self.callback = ''
         
         self.skills = {
-            'set_volume':volume_control.set_volume,
-            'scale_volume':volume_control.scale_volume
+            'set_volume':volume_control.set_volume
         }
         
         
@@ -257,10 +256,10 @@ class VirtualAssistantClient(threading.Thread):
             if self.SYNTHVOICE:
                 with open('./client_response.wav', 'wb') as audio_file:
                     audio_file.write(synth)
-            self.say()
-            self.wait_for_response()
             if action:
                 self.do_action(action)
+            self.say()
+            self.wait_for_response()
         
         if intent == 'shutdown':
             self.shutdown()
