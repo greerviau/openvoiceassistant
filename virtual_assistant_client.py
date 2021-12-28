@@ -15,7 +15,7 @@ from utils import clean_text
 import scapy.all as scapy
 import wave
 import base64
-#from skills import volume_control
+from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
     
@@ -74,12 +74,12 @@ class VirtualAssistantClient(threading.Thread):
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
 
         self.callback = ''
-        '''
+        
         self.skills = {
             'set_volume':volume_control.set_volume,
             'scale_volume':volume_control.scale_volume
         }
-        '''
+        
         
     def scan(self, ip):
         arp_req_frame = scapy.ARP(pdst = ip)
@@ -264,9 +264,10 @@ class VirtualAssistantClient(threading.Thread):
             self.shutdown()
 
     def do_action(self, action):
-        method = action['method']
-        data = action['data']
-        self.skills[method](data)
+        if self.RPI:
+            method = action['method']
+            data = action['data']
+            self.skills[method](data)
     
     def disengage(self):
         self.log('Disengaged')

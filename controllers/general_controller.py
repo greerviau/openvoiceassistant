@@ -5,7 +5,7 @@ import json
 import requests
 import geocoder
 import os
-from nlp_utils import extract_noun_chunks, extract_subject
+from nlp_utils import extract_noun_chunks, extract_subject, try_parse_word_number
 from utils import get_after
 from response_model import *
 
@@ -123,12 +123,15 @@ class GeneralController(object):
         return Response(response)
 
     def volume(self, text):
-        for word in text:
-            if word.isnumeric():
-                value = int(word)
+        for word in text.split(' '):
+            value = try_parse_word_number(word)
+            if value != None:
                 response = f'Setting the volume to {value}'
+                if value <= 10:
+                    value *= 10
                 action = Action('set_volume',value)
                 return Response(response, action)
+        return Response('What level should I set the volume too?')
 
     def answer_math(self, text):
         #todo

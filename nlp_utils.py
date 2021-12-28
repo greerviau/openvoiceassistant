@@ -46,6 +46,12 @@ DAY_OF_MONTH = {
 }
 DAY_EXTENTIONS = ['rd', 'th', 'st', 'nd']
 
+def try_parse_word_number(word):
+    try:
+        return w2n.word_to_num(word)
+    except:
+        return None
+
 def parse_time(text):
     text = text.lower()
     time = None
