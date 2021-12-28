@@ -5,6 +5,7 @@ import pickle
 from controllers.chat_controller import ChatController
 from controllers.planning_controller import PlanningController
 from controllers.general_controller import GeneralController
+from response_model import *
 
 class VirtualAssistant(object):
     def __init__(self, name, address, debug=False):
@@ -27,62 +28,69 @@ class VirtualAssistant(object):
             print(text, end=end)
 
     def understand(self, command):
-
-        if f'hey {self.NAME}' == command or f'yo {self.NAME}' == command or self.NAME == command:
-            return (f'Yes {self.ADDRESS}?', 'wakeup', 100.0)
-        elif 'shut down' in command:
-            return (f'Ok {self.ADDRESS}, see you soon', 'shutdown', 100.0)
-        else:
-            words = command.split()
-            if self.NAME in words[0]:
-                words[0] = ''
-            command = ' '.join(words)
         
-            if command:
-                response = None
-                intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
-                
-                self.log(f'intent: {intent} | conf: {conf}')
-
-                if conf > self.CONF_THRESH:
-                    if intent == 'greeting':
-                        response =  self.greeting(command)
-
-                    if intent == 'goodbye':
-                        response = self.goodbye(command)
-
-                    if intent == 'schedule':
-                        response = self.planningControl.check_calendar(command)
-
-                    if intent == 'play':
-                        #need to work on extracting subject
-                        response = self.generalControl.play(command)
-
-                    if intent == 'time':
-                        response = self.generalControl.get_time(command)
+        response = None
+        intent = ''
+        conf = 0.0
+        if f'hey {self.NAME}' == command or f'yo {self.NAME}' == command or self.NAME == command:
+            response = Response(f'Yes {self.ADDRESS}?')
+            intent = 'wakeup'
+            conf = 100.0
+        elif 'shut down' in command:
+            response = Response(f'Ok {self.ADDRESS}, see you soon')
+            intent = 'shutdown'
+            conf = 100.0
+        else:
+            if not response:
+                words = command.split()
+                if self.NAME in words[0]:
+                    words[0] = ''
+                command = ' '.join(words)
+            
+                if command:
+                    intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
                     
-                    if intent == 'weather':
-                        response = self.generalControl.get_weather(command)
+                    self.log(f'intent: {intent} | conf: {conf}')
 
-                    if intent == 'lookup':
-                        response = self.generalControl.search(command)
+                    if conf > self.CONF_THRESH:
+                        if intent == 'greeting':
+                            response =  self.greeting(command)
+
+                        if intent == 'goodbye':
+                            response = self.goodbye(command)
+
+                        if intent == 'schedule':
+                            response = self.planningControl.check_calendar(command)
+
+                        if intent == 'play':
+                            #need to work on extracting subject
+                            response = self.generalControl.play(command)
+
+                        if intent == 'time':
+                            response = self.generalControl.get_time(command)
+                        
+                        if intent == 'weather':
+                            response = self.generalControl.get_weather(command)
+
+                        if intent == 'lookup':
+                            response = self.generalControl.search(command)
+                        
+                        if intent == 'volume':
+                            response = self.generalControl.volume(command)
+
+                        if intent == 'reminder':
+                            #todo
+                            response = self.planningControl.set_reminder(command)
+
+                        if intent == 'math':
+                            #todo
+                            response = self.generalControl.answer_math(command)
+                    '''
+                    if not response:
+                        response = self.chatControl.chat(command)
+                    '''
                     
-                    if intent == 'volume':
-                        response = self.generalControl.volume(command)
-
-                    if intent == 'reminder':
-                        #todo
-                        response = self.planningControl.set_reminder(command)
-
-                    if intent == 'math':
-                        #todo
-                        response = self.generalControl.answer_math(command)
-                '''
-                if not response:
-                    response = self.chatControl.chat(command)
-                '''
-                
-                return (response, intent, conf)
+                    return (response, intent, conf)
 
             else:
                 return (None, '', 0.0)
