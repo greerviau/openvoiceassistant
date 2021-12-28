@@ -64,6 +64,7 @@ class VirtualAssistantClient(threading.Thread):
         
         self.log(f'Debug Mode: {self.DEBUG}')
         self.log(f'Use Voice Input: {self.USEVOICE}')
+        self.log(f'Device Index: {self.device}')
         self.log('Online Speech Recognition' if self.GOOGLE else 'Offline Speech Recognition')
         self.log(f'Synth Voice Output: {self.USEVOICE}')
         self.log(f'RPI: {self.RPI}')
