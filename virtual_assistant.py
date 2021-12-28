@@ -90,10 +90,8 @@ class VirtualAssistant(object):
                         response = self.chatControl.chat(command)
                     '''
                     
-                    return (response, intent, conf)
+        return (response, intent, conf)
 
-            else:
-                return (None, '', 0.0)
 
     def greeting(self, command):
         if 'morning' in command:

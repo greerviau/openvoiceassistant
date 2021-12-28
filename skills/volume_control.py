@@ -1,7 +1,8 @@
-def set_volume(volume):
+from subprocess import call
+
+def set_volume(volume, device):
     import alsaaudio
-    m = alsaaudio.Mixer('Headphone')
-    m.setvolume(volume)
+    call(["amixer", '-D', f'hw:{device}', 'sset', 'Playback', f'{volume}%'])
 
 def scale_volume(scale):
     import alsaaudio
