@@ -49,7 +49,7 @@ class GeneralController(object):
     def get_weather(self, command):
         city = None
         location = ''
-        if 'in' in command:
+        if 'in' in command.split():
             city = get_after(command, 'in')
             location = f' in {city} '
         elif self.LOCATION:

@@ -144,9 +144,11 @@ async def understand_from_audio_and_synth(data: Data):
         print('Command: ',command)
         response, intent, conf = VA.understand(command)
         print('Intent: ',intent,' - conf: ',conf)
-        print('Response: ',response.to_string())
-        tts.save_to_file(response.response, 'server_response.wav')
-        tts.runAndWait()
+        if response:
+            print('Response: ',response.to_string())
+            tts.save_to_file(response.response, 'server_response.wav')
+            tts.runAndWait()
+
         return {
             'command': command,
             'packet':response,

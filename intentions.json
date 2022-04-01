@@ -253,6 +253,22 @@
                 "turn it down",
                 "turn it down a notch"
             ]
+        },
+        {
+            "tag":"lights",
+            "patterns":[
+                "turn down the lights",
+                "can you turn off the lights",
+                "dim the lights",
+                "turn on the lights",
+                "put the lights on",
+                "set the lights to on",
+                "can you set the lights to off",
+                "can you dim the lights",
+                "turn up the lights",
+                "lights at BIGBLANKBIG percent",
+                "set the lights to BIGBLANKBIG percent"
+            ]
         }
     ]
 }

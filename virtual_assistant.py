@@ -5,6 +5,7 @@ import pickle
 from controllers.chat_controller import ChatController
 from controllers.planning_controller import PlanningController
 from controllers.general_controller import GeneralController
+from controllers.iot_controller import IOTController
 from response_model import *
 
 class VirtualAssistant(object):
@@ -19,7 +20,8 @@ class VirtualAssistant(object):
 
         self.chatControl = ChatController(debug=debug)
         self.planningControl = PlanningController(self.ADDRESS, debug=debug)
-        self.generalControl = GeneralController(self.ADDRESS, 'gloucester', debug=debug)        
+        self.generalControl = GeneralController(self.ADDRESS, 'gloucester', debug=debug)       
+        self.iotControl = IOTController(self.ADDRESS, ('10.0.0.176', 1883)) 
 
         intent, conf = self.predict_intent('bigblankbig')
 
@@ -42,13 +44,14 @@ class VirtualAssistant(object):
             conf = 100.0
         else:
             if not response:
+                response = Response('')
                 words = command.split()
                 if self.NAME in words[0]:
                     words[0] = ''
                 command = ' '.join(words)
             
                 if command:
-                    intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
+                    intent, conf = self.predict_intent(command.split(self.NAME)[-1])
                     
                     self.log(f'intent: {intent} | conf: {conf}')
 
@@ -85,6 +88,9 @@ class VirtualAssistant(object):
                         if intent == 'math':
                             #todo
                             response = self.generalControl.answer_math(command)
+
+                        if intent == 'lights':
+                            response = self.iotControl.light_control(command)
                     '''
                     if not response:
                         response = self.chatControl.chat(command)
