@@ -5,6 +5,7 @@ import json
 import requests
 import geocoder
 import os
+import wolframalpha
 from nlp_utils import extract_noun_chunks, extract_subject, try_parse_word_number
 from utils import get_after
 from response_model import *
@@ -17,6 +18,7 @@ class GeneralController(object):
         self.cold = 55
         self.LOCATION = location
         self.OWM_API_KEY = os.environ['OWM_API_KEY']
+        self.wolf_client = Client(app_id)
 
     def log(self, text, end='\n'):
         if self.DEBUG:
@@ -51,12 +53,12 @@ class GeneralController(object):
         location = ''
         if 'in' in command.split():
             city = get_after(command, 'in')
-            location = f' in {city} '
+            location = f'in {city}'
         elif self.LOCATION:
             city = self.LOCATION
         else:
             city = geocoder.ip('me').city
-            location = f' in {city} '
+            location = f'in {city}'
         # Query weather api
         weather_json = requests.get(f'http://api.openweathermap.org/data/2.5/weather?q={city}&appid={self.OWM_API_KEY}&units=imperial').json()
         # Parse results
@@ -66,7 +68,7 @@ class GeneralController(object):
         description = weather_json['weather'][0]['main'].lower()
         #Create response
         response = ''
-        temp_str = f'the temperature {location}is {temp} degrees'
+        temp_str = f'the temperature {location} is {temp} degrees'
         if temp != feels:
             temp_str += f', it feels like {feels}'
 
@@ -78,7 +80,7 @@ class GeneralController(object):
         command_words = command.split()
 
         if 'weather' in command_words:
-            return Response(f'{response}{temp_str} and {description}')
+            return Response(f'{response} {temp_str} and {description}')
         
         '''
         better way to do this
@@ -89,34 +91,34 @@ class GeneralController(object):
         '''
         if 'hot' in command_words or 'warm' in command_words:
             if temp > self.hot:
-                response = f'Yes, it is quite hot{location}, {temp} degrees to be exact'
+                response = f'Yes, it is quite hot {location}, {temp} degrees to be exact'
             elif temp > self.cold:
-                response = f'No, {location}it is actually a comfortable {temp} degrees'
+                response = f'No, {location} it is actually a comfortable {temp} degrees'
             else:
-                response = f'No, it is actually quite cold{location}, {temp} degrees to be exact'
+                response = f'No, it is actually quite cold {location}, {temp} degrees to be exact'
 
         elif 'cold' in command_words or 'cool' in command_words or 'chilly' in command_words:
             if temp > self.hot:
-                response = f'No, it is actually quite hot{location}, {temp} degrees to be exact'
+                response = f'No, it is actually quite hot {location}, {temp} degrees to be exact'
             elif temp > self.cold:
-                response = f'No, {location}it is actually a comfortable {temp} degrees'
+                response = f'No, {location} it is actually a comfortable {temp} degrees'
             else:
-                response = f'Yes, it is quite cold{location}, {temp} degrees to be exact'
+                response = f'Yes, it is quite cold {location}, {temp} degrees to be exact'
         
         elif 'comfortable' in command_words or 'nice' in command_words:
             if temp > self.hot:
-                response = f'No, it is actually quite hot{location}, {temp} degrees to be exact'
+                response = f'No, it is actually quite hot {location}, {temp} degrees to be exact'
             elif temp > self.cold:
-                response = f'Yes, {location}it is a comfortable {temp} degrees'
+                response = f'Yes, {location} it is a comfortable {temp} degrees'
             else:
-                response = f'No, it is actually quite cold{location}, {temp} degrees to be exact'
+                response = f'No, it is actually quite cold {location}, {temp} degrees to be exact'
 
         elif 'temp' in command_words or 'temperature' in command_words:
             response = temp_str
 
         if ' skies ' in command_words or ' sky ' in command_words:
             if not response:
-                response = f'{description}{location}'
+                response = f'{description} {location}'
             else:
                 response += f', and {description}'
 
@@ -135,4 +137,6 @@ class GeneralController(object):
 
     def answer_math(self, text):
         #todo
-        return ''
+        res = self.wolf_client.query(question)
+        answer = next(res.results).text
+        return f'{answer}'

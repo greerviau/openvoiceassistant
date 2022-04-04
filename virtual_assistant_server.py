@@ -15,15 +15,26 @@ import wave
 from utils import clean_text
 import base64
 
+config = json.load(open('server_config.json', 'r'))
+
 SetLogLevel(0)
-vosk_model = Model('vosk_big')
+
+vosk_model = Model(config['vosk_model'])
+
+host = config['host']
+port = config['port']
+debug = config['debug']
 
 app = FastAPI()
 
-VA = VirtualAssistant(name='david', address='sir', debug=False)
+VA = VirtualAssistant(name=config['name'], 
+                    address=config['address'], 
+                    mqtt_broker=(config['mqtt_broker_ip'], config['mqtt_broker_port']),
+                    location=config['city'],
+                    intent_model=config['intent_model'],
+                    vocab_file=config['vocab_file'],
+                    debug=debug)
 
-host = '10.0.0.120'
-port = 8000
 tts = pyttsx3.init()
 tts.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\MSTTS_V110_enGB_GeorgeM')
 tts.setProperty('rate',175)
@@ -33,6 +44,10 @@ class Data(BaseModel):
     callback: str
     samplerate: int
 
+def log(text, end='\n'):
+    if debug:
+        print(text, end=end)
+
 @app.get('/is_va_hub')
 def is_va_hub():
     return {
@@ -40,10 +55,24 @@ def is_va_hub():
         'port':port
     }
 
+@app.get('/get_hub_details')
+def get_name_and_address():
+    name = VA.name()
+    address = VA.address()
+
+    return {
+        'name':name,
+        'address':address
+    }
+
+@app.get('/reset_chat', status_code=201)
+def reset_chat():
+    VA.reset_chat()
+
 @app.get('/predict_intent/{text}')
 def predict_intent(text: str):
     command = clean_text(text)
-    print(command)
+    log(command)
     intent, conf = VA.predict_intent(command)
     return {
         'intent':intent,
@@ -65,7 +94,7 @@ async def transcribe(audio_file: UploadFile = File(...)):
             res = json.loads(rec.Result())
     res = json.loads(rec.FinalResult())
     command = res['text']
-    print(command)
+    log(command)
     return {
         'text': text
     }
@@ -92,7 +121,7 @@ async def understand_from_audio(audio_file: UploadFile = File(...)):
                 headers={'X-Error': 'There goes my error'})
 
     command = clean_text(command)
-    print(command)
+    log(command)
     response, intent, conf = VA.understand(command)
     return {
         'command': command,
@@ -103,18 +132,10 @@ async def understand_from_audio(audio_file: UploadFile = File(...)):
 
 @app.post('/understand_from_audio_and_synth')
 async def understand_from_audio_and_synth(data: Data):
-    '''
-    file_data = audio_file.file.read()
-    with open('server_command.wav', 'wb') as fd:
-        fd.write(file_data)
-    
-    wf = wave.open('server_command.wav', 'rb')
-    '''
     audio_file = data.audio_file
     samplerate = data.samplerate
     callback = data.callback
-    #print(audio_file)
-    #print(samplerate)
+
     rec = KaldiRecognizer(vosk_model, samplerate)
     rec.SetWords(True)
     res = None
@@ -124,14 +145,13 @@ async def understand_from_audio_and_synth(data: Data):
         data = bytes(base64.b64decode(audio_file.pop(0).encode('utf-8')))
         if rec.AcceptWaveform(data):
             res = rec.Result()
-            #print('Result ', res)
             break
         else:
             _ = rec.PartialResult()
-            #print(_)
+            
     if res is None:
         res = rec.FinalResult()
-    print('Final ', res)
+    log('Final ', res)
     if res:
         command = json.loads(res)['text']
         if not command:
@@ -141,11 +161,11 @@ async def understand_from_audio_and_synth(data: Data):
                     headers={'X-Error': 'There goes my error'})
 
         command = clean_text(command)
-        print('Command: ',command)
+        log('Command: ',command)
         response, intent, conf = VA.understand(command)
-        print('Intent: ',intent,' - conf: ',conf)
+        log('Intent: ',intent,' - conf: ',conf)
         if response:
-            print('Response: ',response.to_string())
+            log('Response: ',response.to_string())
             tts.save_to_file(response.response, 'server_response.wav')
             tts.runAndWait()
 
@@ -165,7 +185,7 @@ async def understand_from_audio_and_synth(data: Data):
 @app.get('/understand_from_text/{text}')
 def understand_from_text(text: str):
     command = clean_text(text)
-    print(command)
+    log(command)
     response, intent, conf = VA.understand(command)
     return {
         'command': text,
@@ -177,7 +197,7 @@ def understand_from_text(text: str):
 @app.get('/understand_from_text_and_synth/{text}')
 def understand_from_text_and_synth(text: str):
     command = clean_text(text)
-    print(command)
+    log(command)
     response, intent, conf = VA.understand(command)
     if not command:
         raise HTTPException(
@@ -203,21 +223,6 @@ def synth_voice(text: str):
     with open('server_response.wav', 'rb') as fd:
         contents = fd.read()
         return Response(content = contents)
-        
-
-@app.get('/get_hub_details')
-def get_name_and_address():
-    name = VA.get_name()
-    address = VA.get_address()
-
-    return {
-        'name':name,
-        'address':address
-    }
-
-@app.get('/reset_chat', status_code=201)
-def reset_chat():
-    VA.reset_chat()
 
 if __name__ == '__main__':
     uvicorn.run(app, host=host, port=port)

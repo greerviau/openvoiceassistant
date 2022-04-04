@@ -1,0 +1,13 @@
+{
+    "host": "10.0.0.120",
+    "port": 8000,
+    "debug": true,
+    "name": "david",
+    "address": "sir",
+    "vosk_model": "vosk_big",
+    "mqtt_broker_ip": "10.0.0.176",
+    "mqtt_broker_port": 1883,
+    "city": "gloucester",
+    "intent_model": "intent_model.h5",
+    "vocab_file": "vocab.p"
+}

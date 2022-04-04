@@ -30,11 +30,12 @@ class VirtualAssistantClient(threading.Thread):
 
         port = 8000
         if not hub_ip:
+            self.lot('Auto-Discover VA HUB...')
             host = self.scan_for_hub(port)
         else:
             host = hub_ip
 
-        self.log(f'\nFound VA HUB | ip: {host}')
+        self.log(f'\nVA HUB Found | IP: {host}')
 
         self.api_url = f'http://{host}:{port}'
         name_and_address = requests.get(f'{self.api_url}/get_hub_details').json()

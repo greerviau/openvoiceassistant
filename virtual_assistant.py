@@ -9,19 +9,19 @@ from controllers.iot_controller import IOTController
 from response_model import *
 
 class VirtualAssistant(object):
-    def __init__(self, name, address, debug=False):
+    def __init__(self, name, address, mqtt_broker, location, intent_model, vocab_file, debug=False):
         self.NAME = name
         self.ADDRESS = address
         self.DEBUG = debug
 
-        self.intent_model = load_model('intent_model.h5')
-        self.word_to_int, self.int_to_label, self.seq_length = pickle.load(open('vocab.p', 'rb'))
+        self.intent_model = load_model(intent_model)
+        self.word_to_int, self.int_to_label, self.seq_length = pickle.load(open(vocab_file, 'rb'))
         self.CONF_THRESH = 85
 
         self.chatControl = ChatController(debug=debug)
         self.planningControl = PlanningController(self.ADDRESS, debug=debug)
-        self.generalControl = GeneralController(self.ADDRESS, 'gloucester', debug=debug)       
-        self.iotControl = IOTController(self.ADDRESS, ('10.0.0.176', 1883)) 
+        self.generalControl = GeneralController(self.ADDRESS, location, debug=debug)       
+        self.iotControl = IOTController(self.ADDRESS, mqtt_broker, debug=debug) 
 
         intent, conf = self.predict_intent('bigblankbig')
 
@@ -51,7 +51,8 @@ class VirtualAssistant(object):
                 command = ' '.join(words)
             
                 if command:
-                    intent, conf = self.predict_intent(command.split(self.NAME)[-1])
+                    
+                    intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
                     
                     self.log(f'intent: {intent} | conf: {conf}')
 
@@ -60,7 +61,7 @@ class VirtualAssistant(object):
                             response =  self.greeting(command)
 
                         if intent == 'goodbye':
-                            response = self.goodbye(command)
+                            response = self.goodbye()
 
                         if intent == 'schedule':
                             response = self.planningControl.check_calendar(command)
@@ -98,7 +99,6 @@ class VirtualAssistant(object):
                     
         return (response, intent, conf)
 
-
     def greeting(self, command):
         if 'morning' in command:
             return f'Good morning {self.ADDRESS}'
@@ -108,8 +108,8 @@ class VirtualAssistant(object):
             return f'Good night {self.ADDRESS}'
         return f'Hello {self.ADDRESS}'
 
-    def goodbye(self, command):
-        return f'Goodbye {self.ADDRESS}, I\'ll talk to you later'
+    def goodbye(self):
+        return f'Goodbye {self.ADDRESS}, I\'ll talk to you later'     
 
     def predict_intent(self, text):
         encoded = encode_word_vec(text, self.word_to_int)
@@ -118,10 +118,12 @@ class VirtualAssistant(object):
         argmax = np.argmax(prediction)
         return self.int_to_label[argmax], round(float(prediction[argmax])*100, 3)
 
-    def get_name(self):
+    @property
+    def name(self):
         return self.NAME
 
-    def get_address(self):
+    @property
+    def address(self):
         return self.ADDRESS
 
     def reset_chat(self):
