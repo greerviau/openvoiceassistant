@@ -5,3 +5,5 @@ sounddevice
 SpeechRecognition
 numpy
 pyaudio
+soundfile
+paho-mqtt

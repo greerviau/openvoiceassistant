@@ -14,6 +14,7 @@ import requests
 from utils import clean_text, net_scan
 import wave
 import base64
+import paho.mqtt.client as mqtt
 from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
