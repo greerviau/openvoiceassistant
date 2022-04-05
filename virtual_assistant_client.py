@@ -48,9 +48,9 @@ class VirtualAssistantClient(threading.Thread):
         mqtt_hostname = hub_response['mqtt_broker_ip']
         mqtt_port = hub_response['mqtt_broker_port']
         self.mqtt_client = mqtt.Client(self.NODE_ID)
-        self.mqtt_client.on_message = self.on_message
         self.mqtt_client.connect(mqtt_hostname, mqtt_port)
-        self.mqtt_client.subscribe(f'home/virtual_assistant/node/{self.NODE_ID}/say')
+        self.mqtt_client.on_connect = self.on_connect
+        self.mqtt_client.on_message = self.on_message
         self.mqtt_client.loop_start()
 
         # Mic and speaker setup
@@ -121,6 +121,9 @@ class VirtualAssistantClient(threading.Thread):
     def on_message(self, mosq, obj, msg):
         self.log(f'MQTT said: {msg}')
         self.synth_and_say(msg)
+
+    def on_connect(self, client, userdata, flags, rc):
+        self.mqtt_client.subscribe(f'home/virtual_assistant/node/{self.NODE_ID}/say')
 
     def synth_and_say(self, text):
         self.log(f'{self.NAME}: {text}')
