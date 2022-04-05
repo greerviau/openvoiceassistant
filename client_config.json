@@ -10,5 +10,5 @@
     "activityTimeout": 15.0,
     "speakerIndex": 3,
     "debug": true,
-    "rpi": false
+    "rpi": true
 }
