@@ -19,12 +19,12 @@ class IOTController(object):
         if self.DEBUG:
             print(text, end=end)
 
-    def light_control(self, command):
+    def light_control(self, command, node_id):
         word_list = command.split()
         if 'on' in word_list or 'max' in word_list:
-            self.client.publish('home/virtual_assistant/bedroom_lights_state', 1)
+            self.client.publish(f'home/virtual_assistant/{node_id}/lights_state', 1)
         elif 'off' in word_list:
-            self.client.publish('home/virtual_assistant/bedroom_lights_state', 0)
+            self.client.publish(f'home/virtual_assistant/{node_id}/lights_state', 0)
         elif 'dim' in word_list or 'down' in word_list:
-            self.client.publish('home/virtual_assistant/bedroom_lights_dim', 1)
+            self.client.publish(f'home/virtual_assistant/{node_id}/lights_dim', 1)
         return Response(f'Ok {self.ADDRESS}')

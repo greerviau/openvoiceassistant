@@ -45,6 +45,7 @@ class Data(BaseModel):
     audio_file: List[str]
     callback: str
     samplerate: int
+    node_id: str
 
 def log(text, end='\n'):
     if debug:
@@ -136,6 +137,7 @@ async def understand_from_audio_and_synth(data: Data):
     audio_file = data.audio_file
     samplerate = data.samplerate
     callback = data.callback
+    node_id = data.node_id
 
     rec = KaldiRecognizer(vosk_model, samplerate)
     rec.SetWords(True)
@@ -163,7 +165,7 @@ async def understand_from_audio_and_synth(data: Data):
 
         command = clean_text(command)
         log(f'Command: {command}')
-        response, intent, conf = VA.understand(command)
+        response, intent, conf = VA.understand(command, node_id)
         log(f'Intent: {intent} - conf: {conf}')
         if response:
             #log(f'Response: {response}')

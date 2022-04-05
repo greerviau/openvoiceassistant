@@ -29,7 +29,7 @@ class VirtualAssistant(object):
         if self.DEBUG:
             print(text, end=end)
 
-    def understand(self, command):
+    def understand(self, command, node_id):
         
         response = None
         intent = ''
@@ -95,7 +95,7 @@ class VirtualAssistant(object):
                             response = self.generalControl.answer_math(command)
 
                         if intent == 'lights':
-                            response = self.iotControl.light_control(command)
+                            response = self.iotControl.light_control(command, node_id)
                     '''
                     if not response:
                         response = self.chatControl.chat(command)

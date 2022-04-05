@@ -19,8 +19,8 @@ from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
     
-    def __init__(self, id, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, speakerIndex, debug, rpi):
-        self.ID = id.lower()
+    def __init__(self, node_id, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, speakerIndex, debug, rpi):
+        self.NODE_ID = node_id.lower()
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.GOOGLE = google
@@ -47,10 +47,10 @@ class VirtualAssistantClient(threading.Thread):
         # MQTT client
         mqtt_hostname = hub_response['mqtt_broker_ip']
         mqtt_port = hub_response['mqtt_broker_port']
-        self.mqtt_client = mqtt.Client(self.ID)
+        self.mqtt_client = mqtt.Client(self.NODE_ID)
         self.client.on_message = self.on_message
-        self.client.connect(mqtt_hostname, mqtt_port, 60)
-        self.client.subscribe(f'/virtual_assistant/node/{id}/say')
+        self.client.connect(mqtt_hostname, mqtt_port)
+        self.client.subscribe(f'home/virtual_assistant/node/{id}/say')
 
         # Mic and speaker setup
         self.speaker = speakerIndex
@@ -224,7 +224,7 @@ class VirtualAssistantClient(threading.Thread):
             
 
     def understand_from_audio_and_synth(self, audio):
-        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio}
+        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio, 'node_id': self.NODE_ID}
         response = requests.post(
             f'{self.api_url}/understand_from_audio_and_synth',
             json=files
