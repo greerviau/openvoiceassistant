@@ -95,7 +95,7 @@ class VirtualAssistantClient(threading.Thread):
         }
         
     @staticmethod
-    def net_scan(self, ip):
+    def net_scan(ip):
         arp_req_frame = scapy.ARP(pdst = ip)
 
         broadcast_ether_frame = scapy.Ether(dst = "ff:ff:ff:ff:ff:ff")
