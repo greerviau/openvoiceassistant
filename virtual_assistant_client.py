@@ -123,6 +123,7 @@ class VirtualAssistantClient(threading.Thread):
         self.synth_and_say(msg)
 
     def on_connect(self, client, userdata, flags, rc):
+        self.log(f'Connected with result code {str(rc)}')
         self.mqtt_client.subscribe(f'home/virtual_assistant/node/{self.NODE_ID}/say')
 
     def synth_and_say(self, text):
