@@ -18,7 +18,7 @@ class GeneralController(object):
         self.cold = 55
         self.LOCATION = location
         self.OWM_API_KEY = os.environ['OWM_API_KEY']
-        self.wolf_client = Client(app_id)
+        self.wolf_client = wolframalpha.Client(os.environ['WOLFRAM_API_KEY'])
 
     def log(self, text, end='\n'):
         if self.DEBUG:
@@ -137,6 +137,12 @@ class GeneralController(object):
 
     def answer_math(self, text):
         #todo
-        res = self.wolf_client.query(question)
+        res = self.wolf_client.query(text)
         answer = next(res.results).text
-        return f'{answer}'
+        for word in answer.split():
+            answer_number = try_parse_word_number
+            if answer_number:
+                if type(answer_number) == float:
+                    answer_number = '{:.2f}'.format(answer_number)
+                answer.replace(word, f'{answer_number}')
+        return Response(f'{answer}')

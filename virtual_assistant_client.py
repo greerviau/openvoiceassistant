@@ -19,7 +19,8 @@ from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
     
-    def __init__(self, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, speakerIndex, debug, rpi):
+    def __init__(self, id, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, speakerIndex, debug, rpi):
+        self.ID = id.lower()
         self.USEVOICE = use_voice
         self.SYNTHVOICE = synth_voice
         self.GOOGLE = google
@@ -30,18 +31,28 @@ class VirtualAssistantClient(threading.Thread):
 
         port = 8000
         if not hub_ip:
-            self.lot('Auto-Discover VA HUB...')
+            self.log('Auto-Discover VA HUB...')
             host = self.scan_for_hub(port)
         else:
             host = hub_ip
 
         self.log(f'\nVA HUB Found | IP: {host}')
 
+        # Get hub info
         self.api_url = f'http://{host}:{port}'
-        name_and_address = requests.get(f'{self.api_url}/get_hub_details').json()
-        self.NAME = name_and_address['name']
-        self.ADDRESS = name_and_address['address']
+        hub_response = requests.get(f'{self.api_url}/get_hub_details').json()
+        self.NAME = hub_response['name']
+        self.ADDRESS = hub_response['address']
 
+        # MQTT client
+        mqtt_hostname = hub_response['mqtt_broker_ip']
+        mqtt_port = hub_response['mqtt_broker_port']
+        self.mqtt_client = mqtt.Client(self.ID)
+        self.client.on_message = self.on_message
+        self.client.connect(mqtt_hostname, mqtt_port, 60)
+        self.client.subscribe(f'/virtual_assistant/node/{id}/say')
+
+        # Mic and speaker setup
         self.speaker = speakerIndex
         devices = sr.Microphone.list_microphone_names()
         self.log(devices)
@@ -55,6 +66,7 @@ class VirtualAssistantClient(threading.Thread):
         if self.SAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
 
+        # Activity timer
         self.ENGAGED = True
         self.HOT = False
         self.TIMEOUT = activityTimeout
@@ -82,8 +94,8 @@ class VirtualAssistantClient(threading.Thread):
             'set_volume':volume_control.set_volume
         }
         
-        
-    def scan(self, ip):
+    @staticmethod
+    def net_scan(self, ip):
         arp_req_frame = scapy.ARP(pdst = ip)
 
         broadcast_ether_frame = scapy.Ether(dst = "ff:ff:ff:ff:ff:ff")
@@ -99,14 +111,14 @@ class VirtualAssistantClient(threading.Thread):
         return result
 
     def scan_for_hub(self, port):
-        devices = self.scan('10.0.0.1/24')
+        devices = net_scan('10.0.0.1/24')
         self.log(devices)
         self.log('Looking for VA HUB...')
         for device in devices:
             ip = device['ip']
             self.log(f'\rTesting: {ip}', end='')
             try:
-                response = requests.get(f'http://{ip}:{port}/is_va_hub').json()
+                response = requests.get(f'http://{ip}:{port}/is_va_hub')
                 return ip
             except:
                 pass
@@ -116,12 +128,15 @@ class VirtualAssistantClient(threading.Thread):
             print(log_text, end=end)
     
     def shutdown(self):
-        print('Shutdown...')
+        self.log('Shutdown...')
         self.TIMER.cancel()
         sys.exit(0)
 
+    def on_message(self, mosq, obj, msg):
+        self.synth_and_say(msg)
+
     def synth_and_say(self, text):
-        print(f'{self.NAME}: {text}')
+        self.log(f'{self.NAME}: {text}')
         if self.SYNTHVOICE:
             with open('./client_response.wav', 'wb') as audio_file:
                 audio_file.write(
@@ -142,10 +157,6 @@ class VirtualAssistantClient(threading.Thread):
         audio = self.recog.listen(source)
         self.log('Done Listening')
         return audio
-
-    def save_audio(self, audio):
-        with open('client_command.wav', 'wb') as f:
-            f.write(audio.get_wav_data())
                 
     def listen_with_google(self):
         text = ''
@@ -158,7 +169,7 @@ class VirtualAssistantClient(threading.Thread):
                         text = self.recog.recognize_google(audio)
                         break
                     except Exception as e:
-                        print(e)
+                        self.log(e)
                         pass
                 if text:
                     text = clean_text(text)
@@ -173,7 +184,7 @@ class VirtualAssistantClient(threading.Thread):
         def input_stream_callback(indata, frames, time, status):
             """This is called (from a separate thread) for each audio block."""
             if status:
-                print(status, file=sys.stderr)
+                self.log(status, file=sys.stderr)
             self.record_queue.put(indata.copy())
 
         while True:
@@ -235,7 +246,7 @@ class VirtualAssistantClient(threading.Thread):
         self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
 
         if response:
-            print(f'{self.NAME}: {response}')
+            self.log(f'{self.NAME}: {response}')
             self.synth_and_say(response)
             self.wait_for_response()
         
@@ -244,16 +255,16 @@ class VirtualAssistantClient(threading.Thread):
 
     def process_understanding_and_say(self, understanding):
         #self.stop_waiting()
-        packet = understanding['packet']
-        response = packet['response']
+        response_packet = understanding['response_packet']
+        response_text = response_packet['reponse_text']
         intent = understanding['intent']
         conf = understanding['conf']
-        action = packet['action']
-        self.callback = packet['callback']
+        action = response_packet['action']
+        self.callback = response_packet['callback']
         synth = base64.b64decode(understanding['synth'])
-        self.log(f'intent: {intent} - conf: {conf} - resp: {response}')
-        if response:
-            print(f'{self.NAME}: {response}')
+        self.log(f'intent: {intent} - conf: {conf} - resp: {response_text}')
+        if response_packet:
+            self.log(f'{self.NAME}: {response_text}')
             if self.SYNTHVOICE:
                 with open('./client_response.wav', 'wb') as audio_file:
                     audio_file.write(synth)

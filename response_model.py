@@ -4,13 +4,13 @@ class Action(object):
         self.data = data
 
 class Response(object):
-    response = None
+    response_text = None
     action = None
     callback = ''
-    def __init__(self, response: str, action: Action = '', callback: str = ''):
-        self.response = response
+    def __init__(self, response_text: str, action: Action = '', callback: str = ''):
+        self.response_text = text
         self.action = action
         self.callback = callback
 
-    def to_string(self):
-        return {'response': self.response, 'action': self.action, 'callback': self.callback}
+    def __str__(self):
+        return f'response {self.response_text} - action {self.action} - callback {self.callback}'

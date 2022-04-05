@@ -1,5 +1,6 @@
 {
-    "hub": "10.0.0.120",
+    "id": "bedroom",
+    "hub": "",
     "useVoice": true,
     "synthVoice": true,
     "google": false,

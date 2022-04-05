@@ -24,12 +24,14 @@ vosk_model = Model(config['vosk_model'])
 host = config['host']
 port = config['port']
 debug = config['debug']
+mqtt_broker_ip = config['mqtt_broker_ip']
+mqtt_broker_port = config['mqtt_broker_port']
 
 app = FastAPI()
 
 VA = VirtualAssistant(name=config['name'], 
                     address=config['address'], 
-                    mqtt_broker=(config['mqtt_broker_ip'], config['mqtt_broker_port']),
+                    mqtt_broker=(mqtt_broker_ip, mqtt_broker_port),
                     location=config['city'],
                     intent_model=config['intent_model'],
                     vocab_file=config['vocab_file'],
@@ -50,19 +52,18 @@ def log(text, end='\n'):
 
 @app.get('/is_va_hub')
 def is_va_hub():
-    return {
-        'ip':host,
-        'port':port
-    }
+    return True
 
 @app.get('/get_hub_details')
 def get_name_and_address():
-    name = VA.name()
-    address = VA.address()
+    name = VA.name
+    address = VA.address
 
     return {
         'name':name,
-        'address':address
+        'address':address,
+        'mqtt_broker_ip': mqtt_broker_ip,
+        'mqtt_broker_port': mqtt_broker_port
     }
 
 @app.get('/reset_chat', status_code=201)
@@ -151,7 +152,7 @@ async def understand_from_audio_and_synth(data: Data):
             
     if res is None:
         res = rec.FinalResult()
-    log('Final ', res)
+    log(f'Final {res}')
     if res:
         command = json.loads(res)['text']
         if not command:
@@ -161,17 +162,17 @@ async def understand_from_audio_and_synth(data: Data):
                     headers={'X-Error': 'There goes my error'})
 
         command = clean_text(command)
-        log('Command: ',command)
+        log(f'Command: {command}')
         response, intent, conf = VA.understand(command)
-        log('Intent: ',intent,' - conf: ',conf)
+        log(f'Intent: {intent} - conf: {conf}')
         if response:
-            log('Response: ',response.to_string())
-            tts.save_to_file(response.response, 'server_response.wav')
+            #log(f'Response: {response}')
+            tts.save_to_file(response.response_text, 'server_response.wav')
             tts.runAndWait()
 
         return {
             'command': command,
-            'packet':response,
+            'reponse_packet':response,
             'intent':intent,
             'conf':conf,
             'synth':base64.b64encode(open('server_response.wav', 'rb').read())

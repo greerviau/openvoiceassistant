@@ -42,6 +42,10 @@ class VirtualAssistant(object):
             response = Response(f'Ok {self.ADDRESS}, see you soon')
             intent = 'shutdown'
             conf = 100.0
+        elif 'thanks' == command or f'thanks {self.NAME}' == command:
+            response = Response(f'No problem {self.ADDRESS}')
+            intent = 'thanks'
+            conf = 100.0
         else:
             if not response:
                 response = Response('')
