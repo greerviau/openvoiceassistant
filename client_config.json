@@ -4,7 +4,7 @@
     "useVoice": true,
     "synthVoice": true,
     "google": false,
-    "mic":"c922",
+    "mic":"seeed",
     "blocksize": 8000,
     "samplerate": null,
     "activityTimeout": 15.0,
