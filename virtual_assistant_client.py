@@ -50,7 +50,7 @@ class VirtualAssistantClient(threading.Thread):
         self.mqtt_client = mqtt.Client(self.NODE_ID)
         self.mqtt_client.on_message = self.on_message
         self.mqtt_client.connect(mqtt_hostname, mqtt_port)
-        self.mqtt_client.subscribe(f'home/virtual_assistant/node/{id}/say')
+        self.mqtt_client.subscribe(f'home/virtual_assistant/node/{self.NODE_ID}/say')
         self.mqtt_client.loop_start()
 
         # Mic and speaker setup
@@ -77,6 +77,7 @@ class VirtualAssistantClient(threading.Thread):
 
         self.record_queue = queue.Queue()
         
+        self.log(f'Node ID: {self.NODE_ID }')
         self.log(f'Debug Mode: {self.DEBUG}')
         self.log(f'Use Voice Input: {self.USEVOICE}')
         self.log(f'Device Index: {self.device}')
