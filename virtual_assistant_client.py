@@ -101,7 +101,7 @@ class VirtualAssistantClient(threading.Thread):
             ip = device['ip']
             self.log(f'\rTesting: {ip}', end='')
             try:
-                response = requests.get(f'http://{ip}:{port}/is_va_hub')
+                response = requests.get(f'http://{ip}:{port}/is_va_hub', timeout=5)
                 return ip
             except:
                 pass
