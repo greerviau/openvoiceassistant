@@ -12,7 +12,6 @@ import json
 import queue
 import requests
 from utils import clean_text, net_scan
-import scapy.all as scapy
 import wave
 import base64
 from skills import volume_control

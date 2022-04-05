@@ -1,5 +1,6 @@
 import string
 import numpy as np
+import scapy.all as scapy
 
 def get_after(text, token):
     return text.split(token)[-1]
