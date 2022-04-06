@@ -125,8 +125,8 @@ class VirtualAssistantClient(threading.Thread):
         sys.exit(0)
 
     def on_message(self, mosq, obj, msg):
-        self.log(f'MQTT said: {msg}')
-        self.synth_and_say(msg)
+        self.log(f'MQTT said: {msg.payload}')
+        self.synth_and_say(msg.payload)
 
     def on_connect(self, client, userdata, flags, rc):
         self.log(f'Connected with result code {str(rc)}')
