@@ -125,7 +125,7 @@ class VirtualAssistantClient(threading.Thread):
         sys.exit(0)
 
     def on_message(self, mosq, obj, msg):
-        text = str(msg.payload)
+        text = msg.payload.decode("utf-8") 
         self.log(f'MQTT said: {text}')
         self.synth_and_say(text)
 
