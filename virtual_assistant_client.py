@@ -75,6 +75,7 @@ class VirtualAssistantClient(threading.Thread):
 
         # Activity timer
         self.ENGAGED = True
+        self.LISTENING = True
         self.HOT = False
         self.TIMEOUT = activityTimeout
         self.TIMER = Timer(interval=activityTimeout*2, function=self.disengage)
@@ -127,7 +128,9 @@ class VirtualAssistantClient(threading.Thread):
     def on_message(self, mosq, obj, msg):
         text = msg.payload.decode("utf-8") 
         self.log(f'MQTT said: {text}')
+        self.LISTENING = False
         self.synth_and_say(text)
+        self.LISTENING = True
 
     def on_connect(self, client, userdata, flags, rc):
         self.log(f'Connected with result code {str(rc)}')
@@ -199,7 +202,7 @@ class VirtualAssistantClient(threading.Thread):
 
                 rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
                 audio_cache = []
-                while True:
+                while self.LISTENING:
                     data = bytes(self.record_queue.get())
                     if rec.AcceptWaveform(data):
                         outFile.append(base64.b64encode(data).decode('utf-8'))
