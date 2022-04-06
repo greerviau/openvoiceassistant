@@ -168,13 +168,13 @@ async def understand_from_audio_and_synth(data: Data):
         response, intent, conf = VA.understand(command, node_id)
         log(f'Intent: {intent} - conf: {conf}')
         if response:
-            #log(f'Response: {response}')
+            log(f'Response: {response.response_text}')
             tts.save_to_file(response.response_text, 'server_response.wav')
             tts.runAndWait()
 
         return {
             'command': command,
-            'reponse_packet':response,
+            'response_packet':response,
             'intent':intent,
             'conf':conf,
             'synth':base64.b64encode(open('server_response.wav', 'rb').read())

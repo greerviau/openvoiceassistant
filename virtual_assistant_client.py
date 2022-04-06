@@ -247,7 +247,7 @@ class VirtualAssistantClient(threading.Thread):
     def process_understanding_and_say(self, understanding):
         #self.stop_waiting()
         response_packet = understanding['response_packet']
-        response_text = response_packet['reponse_text']
+        response_text = response_packet['response_text']
         intent = understanding['intent']
         conf = understanding['conf']
         action = response_packet['action']
