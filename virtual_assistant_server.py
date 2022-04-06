@@ -12,6 +12,7 @@ import wave
 from vosk import Model, KaldiRecognizer, SetLogLevel
 import json
 import wave
+import os
 from utils import clean_text
 import base64
 
@@ -26,12 +27,14 @@ port = config['port']
 debug = config['debug']
 mqtt_broker_ip = config['mqtt_broker_ip']
 mqtt_broker_port = config['mqtt_broker_port']
+mqtt_broker_user = os.environ['MQTT_BROKER_USER']
+mqtt_broker_pswd = os.environ['MQTT_BROKER_PSWD']
 
 app = FastAPI()
 
 VA = VirtualAssistant(name=config['name'], 
                     address=config['address'], 
-                    mqtt_broker=(mqtt_broker_ip, mqtt_broker_port),
+                    mqtt=((mqtt_broker_ip, mqtt_broker_port), mqtt_broker_user, mqtt_broker_pswd),
                     location=config['city'],
                     intent_model=config['intent_model'],
                     vocab_file=config['vocab_file'],
@@ -64,7 +67,9 @@ def get_name_and_address():
         'name':name,
         'address':address,
         'mqtt_broker_ip': mqtt_broker_ip,
-        'mqtt_broker_port': mqtt_broker_port
+        'mqtt_broker_port': mqtt_broker_port,
+        'mqtt_broker_user': mqtt_broker_user,
+        'mqtt_broker_pswd': mqtt_broker_pswd
     }
 
 @app.get('/reset_chat', status_code=201)

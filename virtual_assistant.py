@@ -9,7 +9,7 @@ from controllers.iot_controller import IOTController
 from response_model import *
 
 class VirtualAssistant(object):
-    def __init__(self, name, address, mqtt_broker, location, intent_model, vocab_file, debug=False):
+    def __init__(self, name, address, mqtt, location, intent_model, vocab_file, debug=False):
         self.NAME = name
         self.ADDRESS = address
         self.DEBUG = debug
@@ -21,7 +21,7 @@ class VirtualAssistant(object):
         self.chatControl = ChatController(debug=debug)
         self.planningControl = PlanningController(self.ADDRESS, debug=debug)
         self.generalControl = GeneralController(self.ADDRESS, location, debug=debug)       
-        self.iotControl = IOTController(self.ADDRESS, mqtt_broker, debug=debug) 
+        self.iotControl = IOTController(self.ADDRESS, *mqtt, debug=debug) 
 
         intent, conf = self.predict_intent('bigblankbig')
 

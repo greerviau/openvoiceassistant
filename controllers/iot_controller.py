@@ -6,11 +6,13 @@ from response_model import *
 import paho.mqtt.client as mqtt
 
 class IOTController(object):
-    def __init__(self, address, broker, debug=False):
+    def __init__(self, address, broker, user, pswd, debug=False):
         self.DEBUG = debug
         self.ADDRESS = address
 
-        self.client = mqtt.Client("iot_controller")
+        self.client = mqtt.Client('iot_controller', clean_session=True)
+
+        self.client.username_pw_set(username=user, password=pswd)
         
         self.client.connect(*broker)
         self.client.loop_start()
