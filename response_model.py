@@ -8,7 +8,7 @@ class Response(object):
     action = None
     callback = ''
     def __init__(self, response_text: str, action: Action = '', callback: str = ''):
-        self.response_text = text
+        self.response_text = response_text
         self.action = action
         self.callback = callback
 
