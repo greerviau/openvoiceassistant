@@ -222,7 +222,7 @@ class VirtualAssistantClient(threading.Thread):
                             audio_cache.append(data)
                             if len(audio_cache) > 5:
                                 audio_cache.pop(0)
-                if self.ENGAGED:
+                if self.ENGAGED and self.LISTENING:
                     self.understand_from_audio_and_synth(outFile)
             
 
