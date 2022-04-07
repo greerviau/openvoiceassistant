@@ -23,7 +23,7 @@ class IOTController(object):
 
     def light_control(self, command, node_id):
         word_list = command.split()
-        if 'on' in word_list or 'max' in word_list:
+        if 'on' in word_list or 'max' in word_list or 'up' in word_list:
             self.client.publish(f'home/virtual_assistant/{node_id}/lights_state', 1)
         elif 'off' in word_list:
             self.client.publish(f'home/virtual_assistant/{node_id}/lights_state', 0)

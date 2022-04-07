@@ -32,7 +32,9 @@ class VirtualAssistantClient(threading.Thread):
         port = 8000
         if not hub_ip:
             self.log('Auto-Discover VA HUB...')
-            host = self.scan_for_hub(port)
+            host = ''
+            while not host:
+                host = self.scan_for_hub(port)
         else:
             host = hub_ip
 
@@ -115,6 +117,7 @@ class VirtualAssistantClient(threading.Thread):
                 return ip
             except:
                 pass
+        return ''
 
     def log(self, log_text, end='\n'):
         if self.DEBUG:

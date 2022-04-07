@@ -29,7 +29,7 @@ class GeneralController(object):
         if subject:
             self.log(f'Searching {subject}...')
             try:
-                return wikipedia.summary(subject, 1)
+                return Response(wikipedia.summary(subject, 1))
             except:
                 return Response(f'I had trouble finding information on {subject}')
         else:

@@ -110,10 +110,10 @@ class VirtualAssistant(object):
             return f'Good afternoon {self.ADDRESS}'
         elif 'night' in command:
             return f'Good night {self.ADDRESS}'
-        return f'Hello {self.ADDRESS}'
+        return Response(f'Hello {self.ADDRESS}')
 
     def goodbye(self):
-        return f'Goodbye {self.ADDRESS}, I\'ll talk to you later'     
+        return Response(f'Goodbye {self.ADDRESS}, I\'ll talk to you later')    
 
     def predict_intent(self, text):
         encoded = encode_word_vec(text, self.word_to_int)
