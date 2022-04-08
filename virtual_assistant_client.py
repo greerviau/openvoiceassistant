@@ -24,7 +24,7 @@ class VirtualAssistantClient(threading.Thread):
 
         self.load_config()
 
-        logging.basicConfig(filename='va_server.log', encoding='utf-8', level=logging.DEBUG if self.confgig['debug'] else logging.WARNING)
+        logging.basicConfig(filename='va_server.log', encoding='utf-8', level=logging.DEBUG if self.config['debug'] else logging.WARNING)
 
         if not self.HUB_IP:
             logging.info('Auto-Discover VA HUB...')
