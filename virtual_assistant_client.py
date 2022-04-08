@@ -61,10 +61,11 @@ class VirtualAssistantClient(threading.Thread):
         if not self.MIC_TAG:
             self.MIC_TAG='microphone'
         output = [idx for idx, element in enumerate(devices) if self.MIC_TAG in element.lower()]
-        self.device = output[0]
-        logging.info(f'Device {devices[self.device]} index {self.device}')
+        self.mic_index = output[0]
+        self.mic = devices[self.mic_index]
+        logging.info(f'Device {devices[self.mic_index]} index {self.mic_index}')
 
-        device_info = sd.query_devices(self.device, 'input')
+        device_info = sd.query_devices(self.mic_index, 'input')
         if self.SAMPLERATE is None:
             self.SAMPLERATE = int(device_info['default_samplerate'])
 
@@ -80,7 +81,7 @@ class VirtualAssistantClient(threading.Thread):
         logging.info(f'Room ID: {self.ROOM_ID }')
         logging.info(f'Debug Mode: {self.DEBUG}')
         logging.info(f'Use Voice Input: {self.USE_VOICE}')
-        logging.info(f'Device Index: {self.device}')
+        logging.info(f'Device Index: {self.mic_index}')
         logging.info('Online Speech Recognition' if self.OFFLINE_SR else 'Offline Speech Recognition')
         logging.info(f'Synth Voice Output: {self.USE_VOICE}')
         logging.info(f'RPI: {self.RPI}')
@@ -208,7 +209,7 @@ class VirtualAssistantClient(threading.Thread):
             self.record_queue = queue.Queue()
             #with sf.SoundFile('./client_command.wav', mode='w', samplerate=self.SAMPLERATE, subtype='PCM_16', channels=1) as outFile:
             outFile = []
-            with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.device, dtype='int16',
+            with sd.InputStream(samplerate=self.SAMPLERATE, blocksize = 8000, device=self.mic_index, dtype='int16',
                                     channels=1, callback=input_stream_callback):
 
                 #print('Listening...')
