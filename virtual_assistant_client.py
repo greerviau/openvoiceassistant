@@ -334,5 +334,5 @@ class VirtualAssistantClient(threading.Thread):
                 self.understand_from_text_and_synth(text)
 
 if __name__ == '__main__':
-    assistant = VirtualAssistantClient(*config.values())
+    assistant = VirtualAssistantClient()
     assistant.run()
