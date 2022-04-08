@@ -71,7 +71,7 @@ class VirtualAssistantClient(threading.Thread):
         # Activity timer
         self.ENGAGED = True
         self.LISTENING = True
-        self.TIMER = Timer(interval=activityTimeout*2, function=self.disengage)
+        self.TIMER = Timer(interval=self.ACTIVITY_TIMEOUT*2, function=self.disengage)
         if self.USEVOICE:
             self.TIMER.start()
 
@@ -296,7 +296,7 @@ class VirtualAssistantClient(threading.Thread):
         if self.RPI:
             method = action['method']
             data = action['data']
-            self.skills[method](data, self.speakerIndex)
+            self.skills[method](data, self.SPEAKER_INDEX)
     
     def disengage(self):
         logging.info('Disengaged')
