@@ -243,7 +243,7 @@ class VirtualAssistantClient(threading.Thread):
             
 
     def understand_from_audio_and_synth(self, audio):
-        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio, 'ROOM_ID': self.ROOM_ID}
+        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio, 'room_id': self.ROOM_ID}
         response = requests.post(
             f'{self.api_url}/understand_from_audio_and_synth',
             json=files
