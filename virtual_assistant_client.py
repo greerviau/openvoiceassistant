@@ -57,7 +57,7 @@ class VirtualAssistantClient(threading.Thread):
 
         # Mic and speaker setup
         microphones = sr.Microphone.list_microphone_names()
-        self.log(devices)
+        self.log(microphones)
         if not self.MIC_TAG:
             self.MIC_TAG='microphone'
         self.mic_index = [idx for idx, element in enumerate(microphones) if self.MIC_TAG in element.lower()][0]
