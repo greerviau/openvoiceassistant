@@ -4,7 +4,7 @@
     "hubPort": 8000,
     "useVoice": true,
     "synthVoice": true,
-    "google": false,
+    "offlineSR": true,
     "mic":"seeed",
     "blocksize": 8000,
     "samplerate": null,
