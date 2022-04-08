@@ -216,8 +216,6 @@ class VirtualAssistantClient(threading.Thread):
                                     channels=1, callback=input_stream_callback):
 
                 #print('Listening...')
-
-                rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
                 audio_cache = []
                 while self.LISTENING:
                     data = bytes(self.record_queue.get())
