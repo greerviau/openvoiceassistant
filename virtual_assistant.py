@@ -49,14 +49,13 @@ class VirtualAssistant(object):
         else:
             if not response:
                 response = Response('')
-                words = command.split()
-                if self.NAME in words[0]:
-                    words[0] = ''
-                command = ' '.join(words)
+                command = command.split(self.NAME)[-1]
+                command.replace(self.NAME, 'BLANK')
+                self.log(f'Processed command: {command}')
             
                 if command:
                     
-                    intent, conf = self.predict_intent(command.replace(self.NAME, 'bignamebig'))
+                    intent, conf = self.predict_intent(command)
                     
                     self.log(f'intent: {intent} | conf: {conf}')
 

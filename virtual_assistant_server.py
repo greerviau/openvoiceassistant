@@ -96,7 +96,7 @@ async def understand_from_audio_and_synth(data: Data):
         else:
             _ = rec.PartialResult()
             
-    if res is None:
+    if not res:
         res = rec.FinalResult()
     log(f'Final {res}')
     if res:
@@ -108,7 +108,7 @@ async def understand_from_audio_and_synth(data: Data):
                     headers={'X-Error': 'There goes my error'})
 
         command = clean_text(command)
-        log(f'Command: {command}')
+        log(f'Raw command: {command}')
         response, intent, conf = VA.understand(command, room_id)
         log(f'Intent: {intent} - conf: {conf}')
         if response:

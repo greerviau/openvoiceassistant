@@ -39,8 +39,8 @@ raw_text = ' '.join(X)
 words = sorted(list(set(raw_text.split())))
 word_to_int = dict((c, i+1) for i, c in enumerate(words))
 int_to_word = dict((i+1, c) for i, c in enumerate(words))
-word_to_int['bigpaddingbig'] = 0
-int_to_word[0] = 'bigpaddingbig'
+word_to_int['BLANK'] = 0
+int_to_word[0] = 'BLANK'
 
 n_vocab = len(word_to_int)
 n_labels = len(labels)
@@ -66,10 +66,6 @@ y = np.array(y)
 print(X[0], y[0])
 
 model = Sequential()
-'''
-model.add(Dense(16, input_dim=n_vocab, activation='relu'))
-model.add(Dense(8, input_dim=n_vocab, activation='relu'))
-'''
 model.add(Embedding(n_vocab, embedding_dim, input_length=max_length))
 model.add(LSTM(32))
 model.add(Dropout(0.2))
