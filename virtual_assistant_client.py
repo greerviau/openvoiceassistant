@@ -56,18 +56,17 @@ class VirtualAssistantClient(threading.Thread):
         self.mqtt_client.loop_start()
 
         # Mic and speaker setup
-        devices = sr.Microphone.list_microphone_names()
+        microphones = sr.Microphone.list_microphone_names()
         self.log(devices)
         if not self.MIC_TAG:
             self.MIC_TAG='microphone'
-        output = [idx for idx, element in enumerate(devices) if self.MIC_TAG in element.lower()]
-        self.mic_index = output[0]
+        self.mic_index = [idx for idx, element in enumerate(microphones) if self.MIC_TAG in element.lower()][0]
         self.mic = devices[self.mic_index]
-        self.log(f'Device {devices[self.mic_index]} index {self.mic_index}')
+        self.log(f'Device {microphones[self.mic_index]} index {self.mic_index}')
 
-        device_info = sd.query_devices(self.mic_index, 'input')
+        mic_info = sd.query_devices(self.mic_index, 'input')
         if self.SAMPLERATE is None:
-            self.SAMPLERATE = int(device_info['default_samplerate'])
+            self.SAMPLERATE = int(mic_info['default_samplerate'])
 
         # Activity timer
         self.ENGAGED = True
@@ -81,9 +80,9 @@ class VirtualAssistantClient(threading.Thread):
         self.log(f'Room ID: {self.ROOM_ID }')
         self.log(f'Debug Mode: {self.DEBUG}')
         self.log(f'Use Voice Input: {self.USE_VOICE}')
-        self.log(f'Device Index: {self.mic_index}')
+        self.log(f'Mic Index: {self.mic_index}')
         self.log('Offline Speech Recognition' if self.OFFLINE_SR else 'Online Speech Recognition')
-        self.log(f'Synth Voice Output: {self.USE_VOICE}')
+        self.log(f'Synth Voice Output: {self.SYNTH_VOICE}')
         self.log(f'RPI: {self.RPI}')
         self.log(f'Samplerate: {self.SAMPLERATE}')
         self.log(f'Blocksize: {self.BLOCKSIZE}')
@@ -239,6 +238,7 @@ class VirtualAssistantClient(threading.Thread):
                             if len(audio_cache) > 5:
                                 audio_cache.pop(0)
                 if self.ENGAGED and self.LISTENING:
+                    print(outFile)
                     self.understand_from_audio_and_synth(outFile)
             
 
