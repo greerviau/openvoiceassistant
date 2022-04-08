@@ -22,9 +22,7 @@ class VirtualAssistantClient(threading.Thread):
     
     def __init__(self):
 
-        self.config = load_config()
-
-        self.init_config()
+        self.load_config()
 
         logging.basicConfig(filename='va_server.log', encoding='utf-8', level=logging.DEBUG if self.confgig['debug'] else logging.WARNING)
 
@@ -99,29 +97,9 @@ class VirtualAssistantClient(threading.Thread):
             'set_volume':volume_control.set_volume
         }
 
-    @staticmethod
-    def load_config():
-        return json.load(open('client_config.json', 'r'))
-
-    @staticmethod
-    def save_config(config):
-        with open('client_config.json', 'w') as outfile:
-            json.dump(config, outfile)
-
-    @staticmethod
-    def scan_for_hub(self, port):
-        while True:
-            devices = net_scan('10.0.0.1/24')
-            logging.info('Looking for VA HUB...')
-            for device in devices:
-                ip = device['ip']
-                try:
-                    response = requests.get(f'http://{ip}:{port}/is_va_hub', timeout=5)
-                    return ip
-                except:
-                    pass
-    
-    def init_config(self):
+    def load_config(self):
+        self.config = json.load(open('client_config.json', 'r'))
+        
         self.ROOM_ID = self.config['room']
         self.HUB_IP = self.config['hubIp']
         self.HUB_PORT = self.config['hubPort']
@@ -136,6 +114,21 @@ class VirtualAssistantClient(threading.Thread):
         self.DEBUG = self.config['debug']
         self.RPI = self.config['rpi']
 
+    def save_config(self):
+        with open('client_config.json', 'w') as outfile:
+            json.dump(self.config, outfile)
+
+    def scan_for_hub(self, port):
+        while True:
+            devices = net_scan('10.0.0.1/24')
+            logging.info('Looking for VA HUB...')
+            for device in devices:
+                ip = device['ip']
+                try:
+                    response = requests.get(f'http://{ip}:{port}/is_va_hub', timeout=5)
+                    return ip
+                except:
+                    pass
 
     def log(self, log_text, end='\n'):
         if self.DEBUG:
