@@ -153,7 +153,7 @@ class VirtualAssistantClient(threading.Thread):
 
     def synth_and_say(self, text):
         logging.info(f'{self.NAME}: {text}')
-        if self.SYNTHVOICE:
+        if self.SYNTH_VOICE:
             with open('./client_response.wav', 'wb') as audio_file:
                 audio_file.write(
                     requests.get(f'{self.api_url}/synth_voice/{text}').content
@@ -281,7 +281,7 @@ class VirtualAssistantClient(threading.Thread):
         logging.info(f'intent: {intent} - conf: {conf} - resp: {response_text}')
         if response_packet:
             logging.info(f'{self.NAME}: {response_text}')
-            if self.SYNTHVOICE:
+            if self.SYNTH_VOICE:
                 with open('./client_response.wav', 'wb') as audio_file:
                     audio_file.write(synth)
             if action:
