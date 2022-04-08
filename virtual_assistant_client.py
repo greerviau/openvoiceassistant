@@ -31,9 +31,10 @@ class VirtualAssistantClient(threading.Thread):
         if not self.HUB_IP:
             logging.info('Auto-Discover VA HUB...')
             self.config['hubIp'] = self.scan_for_hub()
+            self.HUB_IP = self.config['hubIp']
             save_config(self.config)
 
-        logging.info(f'VA HUB Found | IP: {self.config['hubIp']}')
+        logging.info(f'VA HUB Found | IP: {self.HUB_IP}')
 
         # Get hub info
         self.api_url = f'http://{self.HUB_IP}:{self.HUB_PORT}'
