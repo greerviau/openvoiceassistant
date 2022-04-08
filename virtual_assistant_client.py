@@ -61,8 +61,8 @@ class VirtualAssistantClient(threading.Thread):
         if not self.MIC_TAG:
             self.MIC_TAG='microphone'
         self.mic_index = [idx for idx, element in enumerate(microphones) if self.MIC_TAG in element.lower()][0]
-        self.mic = devices[self.mic_index]
-        self.log(f'Device {microphones[self.mic_index]} index {self.mic_index}')
+        self.mic = microphones[self.mic_index]
+        self.log(f'Device {self.mic} index {self.mic_index}')
 
         mic_info = sd.query_devices(self.mic_index, 'input')
         if self.SAMPLERATE is None:
