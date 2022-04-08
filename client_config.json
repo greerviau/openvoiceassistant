@@ -1,6 +1,7 @@
 {
-    "id": "bedroom",
-    "hub": "",
+    "room": "bedroom",
+    "hubIp": "",
+    "hubPort": 8000,
     "useVoice": true,
     "synthVoice": true,
     "google": false,

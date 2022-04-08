@@ -19,29 +19,19 @@ from skills import volume_control
 
 class VirtualAssistantClient(threading.Thread):
     
-    def __init__(self, node_id, hub_ip, use_voice, synth_voice, google, mic_tag, blocksize, samplerate, activityTimeout, speakerIndex, debug, rpi):
-        self.NODE_ID = node_id.lower()
-        self.USEVOICE = use_voice
-        self.SYNTHVOICE = synth_voice
-        self.GOOGLE = google
-        self.BLOCKSIZE = blocksize
-        self.SAMPLERATE = samplerate
-        self.DEBUG = debug
-        self.RPI = rpi
+    def __init__(self):
+        self.config = json.load(open('client_config.json', 'r'))
 
-        port = 8000
-        if not hub_ip:
+        if not self.HUB_IP:
             self.log('Auto-Discover VA HUB...')
             host = ''
             while not host:
-                host = self.scan_for_hub(port)
-        else:
-            host = hub_ip
+                host = self.scan_for_hub(self.HUB_PORT)
 
         self.log(f'\nVA HUB Found | IP: {host}')
 
         # Get hub info
-        self.api_url = f'http://{host}:{port}'
+        self.api_url = f'http://{self.HUB_IP}:{self.HUB_PORT}'
         hub_response = requests.get(f'{self.api_url}/get_hub_details').json()
         self.NAME = hub_response['name']
         self.ADDRESS = hub_response['address']
@@ -51,7 +41,7 @@ class VirtualAssistantClient(threading.Thread):
         mqtt_port = hub_response['mqtt_broker_port']
         mqtt_user = hub_response['mqtt_broker_user']
         mqtt_pswd = hub_response['mqtt_broker_pswd']
-        self.mqtt_client = mqtt.Client(self.NODE_ID, clean_session=True)
+        self.mqtt_client = mqtt.Client(self.ROOM_ID, clean_session=True)
         
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
@@ -65,9 +55,9 @@ class VirtualAssistantClient(threading.Thread):
         self.speaker = speakerIndex
         devices = sr.Microphone.list_microphone_names()
         self.log(devices)
-        if not mic_tag:
-            mic_tag='microphone'
-        output = [idx for idx, element in enumerate(devices) if mic_tag in element.lower()]
+        if not self.MIC_TAG:
+            self.MIC_TAG='microphone'
+        output = [idx for idx, element in enumerate(devices) if self.MIC_TAG in element.lower()]
         self.device = output[0]
         self.log(f'Device {devices[self.device]} index {self.device}')
 
@@ -86,7 +76,7 @@ class VirtualAssistantClient(threading.Thread):
 
         self.record_queue = queue.Queue()
         
-        self.log(f'Node ID: {self.NODE_ID }')
+        self.log(f'Node ID: {self.ROOM_ID }')
         self.log(f'Debug Mode: {self.DEBUG}')
         self.log(f'Use Voice Input: {self.USEVOICE}')
         self.log(f'Device Index: {self.device}')
@@ -137,7 +127,7 @@ class VirtualAssistantClient(threading.Thread):
 
     def on_connect(self, client, userdata, flags, rc):
         self.log(f'Connected with result code {str(rc)}')
-        channel = f'home/virtual_assistant/node/{self.NODE_ID}/say'
+        channel = f'home/virtual_assistant/node/{self.ROOM_ID}/say'
         self.mqtt_client.subscribe(channel)
         self.log(f'Subscribed to {channel}')
 
@@ -230,7 +220,7 @@ class VirtualAssistantClient(threading.Thread):
             
 
     def understand_from_audio_and_synth(self, audio):
-        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio, 'node_id': self.NODE_ID}
+        files = {'samplerate': self.SAMPLERATE, 'callback': self.callback, 'audio_file': audio, 'ROOM_ID': self.ROOM_ID}
         response = requests.post(
             f'{self.api_url}/understand_from_audio_and_synth',
             json=files
@@ -316,8 +306,5 @@ class VirtualAssistantClient(threading.Thread):
                 self.understand_from_text_and_synth(text)
 
 if __name__ == '__main__':
-
-    config = json.load(open('client_config.json', 'r'))
-
     assistant = VirtualAssistantClient(*config.values())
     assistant.run()
