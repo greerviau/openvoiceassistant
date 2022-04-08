@@ -76,67 +76,6 @@ def get_name_and_address():
 def reset_chat():
     VA.reset_chat()
 
-@app.get('/predict_intent/{text}')
-def predict_intent(text: str):
-    command = clean_text(text)
-    log(command)
-    intent, conf = VA.predict_intent(command)
-    return {
-        'intent':intent,
-        'conf':conf
-    }
-
-@app.post('/transcribe')
-async def transcribe(audio_file: UploadFile = File(...)):
-    file_data = audio_file.file.read()
-    with open('server_command.wav', 'wb') as fd:
-        fd.write(file_data)
-    wf = wave.open('server_command.wav', 'rb')
-    rec = KaldiRecognizer(vosk_model, wf.getframerate())
-    while True:
-        data = wf.readframes(4000)
-        if len(data) == 0:
-            break
-        if rec.AcceptWaveform(data):
-            res = json.loads(rec.Result())
-    res = json.loads(rec.FinalResult())
-    command = res['text']
-    log(command)
-    return {
-        'text': text
-    }
-
-@app.post('/understand_from_audio')
-async def understand_from_audio(audio_file: UploadFile = File(...)):
-    file_data = audio_file.file.read()
-    with open('server_command.wav', 'wb') as fd:
-        fd.write(file_data)
-    wf = wave.open('server_command.wav', 'rb')
-    rec = KaldiRecognizer(vosk_model, wf.getframerate())
-    while True:
-        data = wf.readframes(4000)
-        if len(data) == 0:
-            break
-        if rec.AcceptWaveform(data):
-            res = json.loads(rec.Result())
-    res = json.loads(rec.FinalResult())
-    command = res['text']
-    if not command:
-        raise HTTPException(
-                status_code=404,
-                detail='command invalid',
-                headers={'X-Error': 'There goes my error'})
-
-    command = clean_text(command)
-    log(command)
-    response, intent, conf = VA.understand(command)
-    return {
-        'command': command,
-        'response':response,
-        'intent':intent,
-        'conf':conf
-    }
-
 @app.post('/understand_from_audio_and_synth')
 async def understand_from_audio_and_synth(data: Data):
     audio_file = data.audio_file
@@ -189,18 +128,6 @@ async def understand_from_audio_and_synth(data: Data):
                     status_code=404,
                     detail='invalid audio',
                     headers={'X-Error': 'There goes my error'})
-
-@app.get('/understand_from_text/{text}')
-def understand_from_text(text: str):
-    command = clean_text(text)
-    log(command)
-    response, intent, conf = VA.understand(command)
-    return {
-        'command': text,
-        'response':response,
-        'intent':intent,
-        'conf':conf
-    }
 
 @app.get('/understand_from_text_and_synth/{text}')
 def understand_from_text_and_synth(text: str):
