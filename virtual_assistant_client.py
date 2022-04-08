@@ -198,6 +198,7 @@ class VirtualAssistantClient(threading.Thread):
     def listen_with_hotword(self):
         vosk_model = vosk.Model('vosk_small')
         rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
+        self.log('Listening with hotword')
 
         def input_stream_callback(indata, frames, time, status):
             """This is called (from a separate thread) for each audio block."""
