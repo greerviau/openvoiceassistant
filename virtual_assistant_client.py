@@ -72,17 +72,17 @@ class VirtualAssistantClient(threading.Thread):
         self.ENGAGED = True
         self.LISTENING = True
         self.TIMER = Timer(interval=self.ACTIVITY_TIMEOUT*2, function=self.disengage)
-        if self.self.USE_VOICE:
+        if self.USE_VOICE:
             self.TIMER.start()
 
         self.record_queue = queue.Queue()
         
         logging.info(f'Room ID: {self.ROOM_ID }')
         logging.info(f'Debug Mode: {self.DEBUG}')
-        logging.info(f'Use Voice Input: {self.self.USE_VOICE}')
+        logging.info(f'Use Voice Input: {self.USE_VOICE}')
         logging.info(f'Device Index: {self.device}')
         logging.info('Online Speech Recognition' if self.OFFLINE_SR else 'Offline Speech Recognition')
-        logging.info(f'Synth Voice Output: {self.self.USE_VOICE}')
+        logging.info(f'Synth Voice Output: {self.USE_VOICE}')
         logging.info(f'RPI: {self.RPI}')
         logging.info(f'Samplerate: {self.SAMPLERATE}')
         logging.info(f'Blocksize: {self.BLOCKSIZE}')
@@ -315,7 +315,7 @@ class VirtualAssistantClient(threading.Thread):
         self.TIMER.cancel()
 
     def run(self):
-        if self.self.USE_VOICE:
+        if self.USE_VOICE:
             if self.OFFLINE_SR:
                 self.listen_with_google()
             else:
