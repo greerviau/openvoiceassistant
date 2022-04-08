@@ -5,7 +5,7 @@ from pydub import AudioSegment
 from pydub.playback import play
 import threading
 from threading import Timer
-import vosk
+from vosk import Model, KaldiRecognizer, SetLogLevel
 import sys
 import os
 import json
@@ -17,6 +17,8 @@ import base64
 import paho.mqtt.client as mqtt
 import logging
 from skills import volume_control
+
+SetLogLevel(0)
 
 class VirtualAssistantClient(threading.Thread):
     
@@ -195,8 +197,8 @@ class VirtualAssistantClient(threading.Thread):
                         self.understand_from_text_and_synth(text)
         
     def listen_with_hotword(self):
-        vosk_model = vosk.Model('vosk_small')
-        rec = vosk.KaldiRecognizer(vosk_model, self.SAMPLERATE)
+        vosk_model = Model('vosk_small')
+        rec = KaldiRecognizer(vosk_model, self.SAMPLERATE)
         self.log('Listening with hotword')
 
         def input_stream_callback(indata, frames, time, status):
@@ -238,7 +240,6 @@ class VirtualAssistantClient(threading.Thread):
                             if len(audio_cache) > 5:
                                 audio_cache.pop(0)
                 if self.ENGAGED and self.LISTENING:
-                    print(outFile)
                     self.understand_from_audio_and_synth(outFile)
             
 
