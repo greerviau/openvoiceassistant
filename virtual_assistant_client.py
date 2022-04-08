@@ -56,7 +56,6 @@ class VirtualAssistantClient(threading.Thread):
         self.mqtt_client.loop_start()
 
         # Mic and speaker setup
-        self.speaker = speakerIndex
         devices = sr.Microphone.list_microphone_names()
         logging.info(devices)
         if not self.MIC_TAG:
@@ -297,7 +296,7 @@ class VirtualAssistantClient(threading.Thread):
         if self.RPI:
             method = action['method']
             data = action['data']
-            self.skills[method](data, self.speaker)
+            self.skills[method](data, self.speakerIndex)
     
     def disengage(self):
         logging.info('Disengaged')
