@@ -24,7 +24,7 @@ class VirtualAssistantClient(threading.Thread):
 
         self.load_config()
 
-        logging.basicConfig(filename='va_server.log', encoding='utf-8', level=logging.DEBUG if self.config['debug'] else logging.WARNING)
+        logging.basicConfig(filename='va_server.log', encoding='utf-8', level=logging.DEBUG if self.DEBUG else logging.WARNING)
 
         if not self.HUB_IP:
             logging.info('Auto-Discover VA HUB...')
@@ -82,7 +82,7 @@ class VirtualAssistantClient(threading.Thread):
         logging.info(f'Debug Mode: {self.DEBUG}')
         logging.info(f'Use Voice Input: {self.USE_VOICE}')
         logging.info(f'Device Index: {self.mic_index}')
-        logging.info('Online Speech Recognition' if self.OFFLINE_SR else 'Offline Speech Recognition')
+        logging.info('Offline Speech Recognition' if self.OFFLINE_SR else 'Online Speech Recognition')
         logging.info(f'Synth Voice Output: {self.USE_VOICE}')
         logging.info(f'RPI: {self.RPI}')
         logging.info(f'Samplerate: {self.SAMPLERATE}')
@@ -317,7 +317,7 @@ class VirtualAssistantClient(threading.Thread):
 
     def run(self):
         if self.USE_VOICE:
-            if self.OFFLINE_SR:
+            if not self.OFFLINE_SR:
                 self.listen_with_google()
             else:
                 self.listen_with_hotword()
