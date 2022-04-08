@@ -24,15 +24,15 @@ class VirtualAssistantClient(threading.Thread):
 
         self.load_config()
 
-        logging.basicConfig(filename='va_server.log', encoding='utf-8', level=logging.DEBUG if self.DEBUG else logging.WARNING)
+        logging.basicConfig(filename='va_client.log', encoding='utf-8', level=logging.DEBUG if self.DEBUG else logging.WARNING)
 
         if not self.HUB_IP:
-            logging.info('Auto-Discover VA HUB...')
+            logging.debug('Auto-Discover VA HUB...')
             self.config['hubIp'] = self.scan_for_hub(self.HUB_PORT)
             self.HUB_IP = self.config['hubIp']
             self.save_config()
 
-        logging.info(f'VA HUB Found | IP: {self.HUB_IP}')
+        logging.debug(f'VA HUB Found | IP: {self.HUB_IP}')
 
         # Get hub info
         self.api_url = f'http://{self.HUB_IP}:{self.HUB_PORT}'
@@ -57,13 +57,13 @@ class VirtualAssistantClient(threading.Thread):
 
         # Mic and speaker setup
         devices = sr.Microphone.list_microphone_names()
-        logging.info(devices)
+        logging.debug(devices)
         if not self.MIC_TAG:
             self.MIC_TAG='microphone'
         output = [idx for idx, element in enumerate(devices) if self.MIC_TAG in element.lower()]
         self.mic_index = output[0]
         self.mic = devices[self.mic_index]
-        logging.info(f'Device {devices[self.mic_index]} index {self.mic_index}')
+        logging.debug(f'Device {devices[self.mic_index]} index {self.mic_index}')
 
         device_info = sd.query_devices(self.mic_index, 'input')
         if self.SAMPLERATE is None:
@@ -78,16 +78,16 @@ class VirtualAssistantClient(threading.Thread):
 
         self.record_queue = queue.Queue()
         
-        logging.info(f'Room ID: {self.ROOM_ID }')
-        logging.info(f'Debug Mode: {self.DEBUG}')
-        logging.info(f'Use Voice Input: {self.USE_VOICE}')
-        logging.info(f'Device Index: {self.mic_index}')
-        logging.info('Offline Speech Recognition' if self.OFFLINE_SR else 'Online Speech Recognition')
-        logging.info(f'Synth Voice Output: {self.USE_VOICE}')
-        logging.info(f'RPI: {self.RPI}')
-        logging.info(f'Samplerate: {self.SAMPLERATE}')
-        logging.info(f'Blocksize: {self.BLOCKSIZE}')
-        logging.info(f'Activity Timeout: {self.ACTIVITY_TIMEOUT}')
+        logging.debug(f'Room ID: {self.ROOM_ID }')
+        logging.debug(f'Debug Mode: {self.DEBUG}')
+        logging.debug(f'Use Voice Input: {self.USE_VOICE}')
+        logging.debug(f'Device Index: {self.mic_index}')
+        logging.debug('Offline Speech Recognition' if self.OFFLINE_SR else 'Online Speech Recognition')
+        logging.debug(f'Synth Voice Output: {self.USE_VOICE}')
+        logging.debug(f'RPI: {self.RPI}')
+        logging.debug(f'Samplerate: {self.SAMPLERATE}')
+        logging.debug(f'Blocksize: {self.BLOCKSIZE}')
+        logging.debug(f'Activity Timeout: {self.ACTIVITY_TIMEOUT}')
 
         self.synth_and_say(f'How can I help {self.ADDRESS}?')
 
@@ -121,7 +121,7 @@ class VirtualAssistantClient(threading.Thread):
     def scan_for_hub(self, port):
         while True:
             devices = net_scan('10.0.0.1/24')
-            logging.info('Looking for VA HUB...')
+            logging.debug('Looking for VA HUB...')
             for device in devices:
                 ip = device['ip']
                 try:
@@ -135,25 +135,25 @@ class VirtualAssistantClient(threading.Thread):
             print(log_text, end=end)
     
     def shutdown(self):
-        logging.info('Shutdown...')
+        logging.debug('Shutdown...')
         self.TIMER.cancel()
         sys.exit(0)
 
     def on_message(self, mosq, obj, msg):
         text = msg.payload.decode("utf-8") 
-        logging.info(f'MQTT said: {text}')
+        logging.debug(f'MQTT said: {text}')
         self.LISTENING = False
         self.synth_and_say(text)
         self.LISTENING = True
 
     def on_connect(self, client, userdata, flags, rc):
-        logging.info(f'Connected with result code {str(rc)}')
+        logging.debug(f'Connected with result code {str(rc)}')
         channel = f'home/virtual_assistant/room/{self.ROOM_ID}/say'
         self.mqtt_client.subscribe(channel)
-        logging.info(f'Subscribed to {channel}')
+        logging.debug(f'Subscribed to {channel}')
 
     def synth_and_say(self, text):
-        logging.info(f'{self.NAME}: {text}')
+        logging.debug(f'{self.NAME}: {text}')
         if self.SYNTH_VOICE:
             with open('./client_response.wav', 'wb') as audio_file:
                 audio_file.write(
@@ -170,9 +170,9 @@ class VirtualAssistantClient(threading.Thread):
             os.system('aplay client_response.wav')
 
     def listen(self, source):
-        logging.info('Listening...')
+        logging.debug('Listening...')
         audio = self.recog.listen(source)
-        logging.info('Done Listening')
+        logging.debug('Done Listening')
         return audio
                 
     def listen_with_google(self):
@@ -186,11 +186,11 @@ class VirtualAssistantClient(threading.Thread):
                         text = self.recog.recognize_google(audio)
                         break
                     except Exception as e:
-                        logging.info(e)
+                        logging.debug(e)
                         pass
                 if text:
                     text = clean_text(text)
-                    logging.info(f'cleaned: {text}')
+                    logging.debug(f'cleaned: {text}')
                     if self.NAME in text or self.ENGAGED:
                         self.understand_from_text_and_synth(text)
         
@@ -201,7 +201,7 @@ class VirtualAssistantClient(threading.Thread):
         def input_stream_callback(indata, frames, time, status):
             """This is called (from a separate thread) for each audio block."""
             if status:
-                logging.info(status, file=sys.stderr)
+                logging.debug(status, file=sys.stderr)
             self.record_queue.put(indata.copy())
 
         while True:
@@ -221,7 +221,7 @@ class VirtualAssistantClient(threading.Thread):
                     if rec.AcceptWaveform(data):
                         outFile.append(base64.b64encode(data).decode('utf-8'))
                         text = json.loads(rec.Result())['text']
-                        logging.info(text)
+                        logging.debug(text)
                         if self.NAME in text:
                             self.ENGAGED = True
                         break
@@ -260,10 +260,10 @@ class VirtualAssistantClient(threading.Thread):
         response = understanding['response']
         intent = understanding['intent']
         conf = understanding['conf']
-        logging.info(f'intent: {intent} - conf: {conf} - resp: {response}')
+        logging.debug(f'intent: {intent} - conf: {conf} - resp: {response}')
 
         if response:
-            logging.info(f'{self.NAME}: {response}')
+            logging.debug(f'{self.NAME}: {response}')
             self.synth_and_say(response)
             self.wait_for_response()
         
@@ -279,9 +279,9 @@ class VirtualAssistantClient(threading.Thread):
         action = response_packet['action']
         self.callback = response_packet['callback']
         synth = base64.b64decode(understanding['synth'])
-        logging.info(f'intent: {intent} - conf: {conf} - resp: {response_text}')
+        logging.debug(f'intent: {intent} - conf: {conf} - resp: {response_text}')
         if response_packet:
-            logging.info(f'{self.NAME}: {response_text}')
+            logging.debug(f'{self.NAME}: {response_text}')
             if self.SYNTH_VOICE:
                 with open('./client_response.wav', 'wb') as audio_file:
                     audio_file.write(synth)
@@ -300,14 +300,14 @@ class VirtualAssistantClient(threading.Thread):
             self.skills[method](data, self.SPEAKER_INDEX)
     
     def disengage(self):
-        logging.info('Disengaged')
+        logging.debug('Disengaged')
         self.ENGAGED = False
         requests.get(f'{self.api_url}/reset_chat')
 
     def wait_for_response(self):
         if self.USE_VOICE:
             self.TIMER.cancel()
-            logging.info('Waiting for response')
+            logging.debug('Waiting for response')
             self.ENGAGED = True
             self.TIMER = Timer(interval=self.ACTIVITY_TIMEOUT, function=self.disengage)
             self.TIMER.start()
