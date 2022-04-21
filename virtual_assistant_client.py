@@ -19,6 +19,7 @@ from skills import volume_control
 
 SetLogLevel(0)
 dir_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir_path)
 
 class VirtualAssistantClient():
     
@@ -99,7 +100,7 @@ class VirtualAssistantClient():
         }
 
     def load_config(self):
-        self.config = json.load(open(os.path.join(dir_path, 'client_config.json'), 'r'))
+        self.config = json.load(open('client_config.json', 'r'))
         
         self.ROOM_ID = self.config['room']
         self.HUB_IP = self.config['hubIp']
@@ -116,7 +117,7 @@ class VirtualAssistantClient():
         self.RPI = self.config['rpi']
 
     def save_config(self):
-        with open(os.path.join(dir_path, 'client_config.json'), 'w') as outfile:
+        with open('client_config.json', 'w') as outfile:
             json.dump(self.config, outfile)
 
     def scan_for_hub(self, port):
