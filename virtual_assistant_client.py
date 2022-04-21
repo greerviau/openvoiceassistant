@@ -3,7 +3,6 @@ import sounddevice as sd
 import soundfile as sf
 from pydub import AudioSegment
 from pydub.playback import play
-import threading
 from threading import Timer
 from vosk import Model, KaldiRecognizer, SetLogLevel
 import sys
@@ -20,7 +19,7 @@ from skills import volume_control
 
 SetLogLevel(0)
 
-class VirtualAssistantClient(threading.Thread):
+class VirtualAssistantClient():
     
     def __init__(self):
 
