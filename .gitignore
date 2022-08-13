@@ -19,3 +19,4 @@ vosk_small
 vosk-server
 server_command.wav
 client_command.wav
+.DS_Store
