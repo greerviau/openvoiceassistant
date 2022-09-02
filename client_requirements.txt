@@ -1,9 +1,0 @@
-scapy
-vosk
-pydub
-sounddevice
-SpeechRecognition
-numpy
-pyaudio
-soundfile
-paho-mqtt

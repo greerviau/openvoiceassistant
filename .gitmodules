@@ -1,6 +1,0 @@
-[submodule "openvoiceassistant-hub"]
-	path = openvoiceassistant-hub
-	url = https://github.com/greerviau/openvoiceassistant-hub.git
-[submodule "openvoiceassistant-node"]
-	path = openvoiceassistant-node
-	url = https://github.com/greerviau/openvoiceassistant-node.git
